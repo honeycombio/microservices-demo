@@ -16,6 +16,7 @@ require (
 	go.opencensus.io v0.22.3
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.17.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.17.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.17.0
 	go.opentelemetry.io/otel v0.17.0
 	go.opentelemetry.io/otel/exporters/otlp v0.17.0
 	go.opentelemetry.io/otel/sdk v0.17.0
