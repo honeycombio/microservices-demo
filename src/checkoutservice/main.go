@@ -27,6 +27,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
@@ -96,6 +97,7 @@ func initOtelTracing(log logrus.FieldLogger) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	otel.SetTextMapPropagator(propagation.TraceContext{})
 	otel.SetTracerProvider(
 		trace.NewTracerProvider(
 			trace.WithConfig(trace.Config{DefaultSampler: trace.AlwaysSample()}),
