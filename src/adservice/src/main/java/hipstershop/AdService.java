@@ -28,18 +28,12 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
 import io.grpc.services.*;
 import io.grpc.stub.StreamObserver;
-import io.opencensus.common.Duration;
-import io.opencensus.contrib.grpc.metrics.RpcViews;
-import io.opencensus.exporter.stats.stackdriver.StackdriverStatsConfiguration;
-import io.opencensus.exporter.stats.stackdriver.StackdriverStatsExporter;
-import io.opencensus.exporter.trace.jaeger.JaegerExporterConfiguration;
-import io.opencensus.exporter.trace.jaeger.JaegerTraceExporter;
-import io.opencensus.exporter.trace.stackdriver.StackdriverTraceConfiguration;
-import io.opencensus.exporter.trace.stackdriver.StackdriverTraceExporter;
-import io.opencensus.trace.AttributeValue;
-import io.opencensus.trace.Span;
-import io.opencensus.trace.Tracer;
-import io.opencensus.trace.Tracing;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.extension.annotations.WithSpan;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +47,6 @@ import org.apache.logging.log4j.Logger;
 public final class AdService {
 
   private static final Logger logger = LogManager.getLogger(AdService.class);
-  private static final Tracer tracer = Tracing.getTracer();
 
   @SuppressWarnings("FieldCanBeLocal")
   private static int MAX_ADS_TO_SERVE = 2;
@@ -104,32 +97,32 @@ public final class AdService {
      *     AdResponse}
      */
     @Override
+    @WithSpan
     public void getAds(AdRequest req, StreamObserver<AdResponse> responseObserver) {
       AdService service = AdService.getInstance();
-      Span span = tracer.getCurrentSpan();
+      Span span = Span.current();
       try {
-        span.putAttribute("method", AttributeValue.stringAttributeValue("getAds"));
+        span.setAttribute("method", "getAds");
         List<Ad> allAds = new ArrayList<>();
         logger.info("received ad request (context_words=" + req.getContextKeysList() + ")");
+        long keycount =req.getContextKeysCount();
         if (req.getContextKeysCount() > 0) {
-          span.addAnnotation(
+          span.addEvent(
               "Constructing Ads using context",
-              ImmutableMap.of(
-                  "Context Keys",
-                  AttributeValue.stringAttributeValue(req.getContextKeysList().toString()),
-                  "Context Keys length",
-                  AttributeValue.longAttributeValue(req.getContextKeysCount())));
-          for (int i = 0; i < req.getContextKeysCount(); i++) {
+              io.opentelemetry.api.common.Attributes.of(
+                AttributeKey.stringKey("Context Keys"), req.getContextKeysList().toString(),
+                AttributeKey.longKey("Context Keys length"), keycount ));
+          for (int i = 0; i < keycount; i++) {
             Collection<Ad> ads = service.getAdsByCategory(req.getContextKeys(i));
             allAds.addAll(ads);
           }
         } else {
-          span.addAnnotation("No Context provided. Constructing random Ads.");
+          span.addEvent("No Context provided. Constructing random Ads.");
           allAds = service.getRandomAds();
         }
         if (allAds.isEmpty()) {
           // Serve random ads.
-          span.addAnnotation("No Ads found based on context. Constructing random Ads.");
+          span.addEvent("No Ads found based on context. Constructing random Ads.");
           allAds = service.getRandomAds();
         }
         AdResponse reply = AdResponse.newBuilder().addAllAds(allAds).build();
@@ -221,37 +214,6 @@ public final class AdService {
       return;
     }
     logger.info("Stats enabled");
-
-    long sleepTime = 10; /* seconds */
-    int maxAttempts = 5;
-    boolean statsExporterRegistered = false;
-    for (int i = 0; i < maxAttempts; i++) {
-      try {
-        if (!statsExporterRegistered) {
-          StackdriverStatsExporter.createAndRegister(
-              StackdriverStatsConfiguration.builder()
-                  .setExportInterval(Duration.create(60, 0))
-                  .build());
-          statsExporterRegistered = true;
-        }
-      } catch (Exception e) {
-        if (i == (maxAttempts - 1)) {
-          logger.log(
-              Level.WARN,
-              "Failed to register Stackdriver Exporter."
-                  + " Stats data will not reported to Stackdriver. Error message: "
-                  + e.toString());
-        } else {
-          logger.info("Attempt to register Stackdriver Exporter in " + sleepTime + " seconds ");
-          try {
-            Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
-          } catch (Exception se) {
-            logger.log(Level.WARN, "Exception while sleeping" + se.toString());
-          }
-        }
-      }
-    }
-    logger.info("Stats enabled - Stackdriver Exporter initialized.");
   }
 
   private static void initTracing() {
@@ -261,54 +223,13 @@ public final class AdService {
     }
     logger.info("Tracing enabled");
 
-    long sleepTime = 10; /* seconds */
-    int maxAttempts = 5;
-    boolean traceExporterRegistered = false;
-
-    for (int i = 0; i < maxAttempts; i++) {
-      try {
-        if (!traceExporterRegistered) {
-          StackdriverTraceExporter.createAndRegister(
-              StackdriverTraceConfiguration.builder().build());
-          traceExporterRegistered = true;
-        }
-      } catch (Exception e) {
-        if (i == (maxAttempts - 1)) {
-          logger.log(
-              Level.WARN,
-              "Failed to register Stackdriver Exporter."
-                  + " Tracing data will not reported to Stackdriver. Error message: "
-                  + e.toString());
-        } else {
-          logger.info("Attempt to register Stackdriver Exporter in " + sleepTime + " seconds ");
-          try {
-            Thread.sleep(TimeUnit.SECONDS.toMillis(sleepTime));
-          } catch (Exception se) {
-            logger.log(Level.WARN, "Exception while sleeping" + se.toString());
-          }
-        }
-      }
-    }
-    logger.info("Tracing enabled - Stackdriver exporter initialized.");
   }
 
 
 
 
   private static void initJaeger() {
-    String jaegerAddr = System.getenv("JAEGER_SERVICE_ADDR");
-    if (jaegerAddr != null && !jaegerAddr.isEmpty()) {
-      String jaegerUrl = String.format("http://%s/api/traces", jaegerAddr);
-      // Register Jaeger Tracing.
-      JaegerTraceExporter.createAndRegister(
-          JaegerExporterConfiguration.builder()
-              .setThriftEndpoint(jaegerUrl)
-              .setServiceName("adservice")
-              .build());
-      logger.info("Jaeger initialization complete.");
-    } else {
-      logger.info("Jaeger initialization disabled.");
-    }
+
   }
 
   /** Main launches the server from the command line. */
@@ -321,7 +242,7 @@ public final class AdService {
      to new the new measure will not provide any tags (like method). This will create some
      discrepencies when compared grpc measurements in Go services.
     */
-    RpcViews.registerAllViews();
+    // RpcViews.registerAllViews();
 
     new Thread(
             () -> {

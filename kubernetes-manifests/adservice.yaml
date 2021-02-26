@@ -35,12 +35,37 @@ spec:
         env:
         - name: PORT
           value: "9555"
-        # - name: DISABLE_STATS
-        #   value: "1"
-        # - name: DISABLE_TRACING
-        #   value: "1"
+        - name: DISABLE_STATS
+          value: "1"
+        - name: DISABLE_TRACING
+          value: "1"
         #- name: JAEGER_SERVICE_ADDR
         #  value: "jaeger-collector:14268"
+
+        - name: OTEL_TRACES_EXPORTER
+          value: otlp
+        - name: OTEL_METRICS_EXPORTER
+          value: none
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: https://api.honeycomb.io
+        - name: API_KEY
+          valueFrom: 
+            configMapKeyRef: 
+              name: secrets
+              key: api_key
+        - name: DATASET
+          valueFrom: 
+            configMapKeyRef: 
+              name: secrets
+              key: dataset
+        - name: OTEL_EXPORTER_OTLP_HEADERS
+          value: x-honeycomb-team=$(API_KEY),x-honeycomb-dataset=$(DATASET)
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service_name=adservice,ip=$(POD_IP)
         resources:
           requests:
             cpu: 200m

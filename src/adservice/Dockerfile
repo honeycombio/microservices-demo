@@ -31,10 +31,9 @@ FROM openjdk:8-slim
 RUN apt-get -y update && apt-get install -qqy \
     wget \
     && rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /opt/cprof && \
-    wget -q -O- https://storage.googleapis.com/cloud-profiler/java/latest/profiler_java_agent.tar.gz \
-    | tar xzv -C /opt/cprof && \
-    rm -rf profiler_java_agent.tar.gz
+
+RUN mkdir -p /opt/otel && \
+    wget -q -O opt/otel/javaagent.jar https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v0.17.0/opentelemetry-javaagent-all.jar
 
 RUN GRPC_HEALTH_PROBE_VERSION=v0.3.6 && \
     wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
