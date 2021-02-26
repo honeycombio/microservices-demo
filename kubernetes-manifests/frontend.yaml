@@ -68,6 +68,18 @@ spec:
             value: "adservice:9555"
           - name: ENV_PLATFORM
             value: "gcp"
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: api.honeycomb.io:443
+          - name: HONEYCOMB_API_KEY
+            valueFrom: 
+              configMapKeyRef: 
+                name: secrets
+                key: honeycomb_api_key
+          - name: HONEYCOMB_DATASET
+            valueFrom: 
+              configMapKeyRef: 
+                name: secrets
+                key: honeycomb_dataset
           # - name: DISABLE_TRACING
           #   value: "1"
           # - name: DISABLE_PROFILER

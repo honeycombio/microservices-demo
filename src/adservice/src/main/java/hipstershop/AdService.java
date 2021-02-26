@@ -56,10 +56,11 @@ public final class AdService {
 
   private static final AdService service = new AdService();
 
+  @WithSpan
   private void start() throws IOException {
     int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "9555"));
     healthMgr = new HealthStatusManager();
-
+    logger.info("Building server on " + port);
     server =
         ServerBuilder.forPort(port)
             .addService(new AdServiceImpl())
@@ -208,29 +209,10 @@ public final class AdService {
         .build();
   }
 
-  private static void initStats() {
-    if (System.getenv("DISABLE_STATS") != null) {
-      logger.info("Stats disabled.");
-      return;
-    }
-    logger.info("Stats enabled");
-  }
-
-  private static void initTracing() {
-    if (System.getenv("DISABLE_TRACING") != null) {
-      logger.info("Tracing disabled.");
-      return;
-    }
-    logger.info("Tracing enabled");
-
-  }
 
 
 
 
-  private static void initJaeger() {
-
-  }
 
   /** Main launches the server from the command line. */
   public static void main(String[] args) throws IOException, InterruptedException {
@@ -244,15 +226,8 @@ public final class AdService {
     */
     // RpcViews.registerAllViews();
 
-    new Thread(
-            () -> {
-              initStats();
-              initTracing();
-            })
-        .start();
 
     // Register Jaeger
-    initJaeger();
 
     // Start the RPC server. You shouldn't see any output from gRPC before this.
     logger.info("AdService starting.");

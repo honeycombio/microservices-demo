@@ -135,6 +135,7 @@ public class AdServiceClient {
 
     AdServiceClient client = new AdServiceClient(host, serverPort);
     try {
+      logger.info("Getting Ads on AdServiceClient...");
       client.getAds(contextKeys);
     } finally {
       client.shutdown();

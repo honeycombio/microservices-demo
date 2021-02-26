@@ -105,8 +105,7 @@ task adServiceClient(type: CreateStartScripts) {
     applicationName = 'AdServiceClient'
     outputDir = new File(project.buildDir, 'tmp')
     classpath = startScripts.classpath
-    defaultJvmOpts =
-            ["-javaagent:/opt/otel/javaagent.jar"]
+    defaultJvmOpts = ["-javaagent:/opt/otel/javaagent.jar"]
 }
 
 applicationDistribution.into('bin') {

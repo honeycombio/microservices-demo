@@ -47,19 +47,19 @@ spec:
         - name: OTEL_METRICS_EXPORTER
           value: none
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: https://api.honeycomb.io
-        - name: API_KEY
+          value: https://api.honeycomb.io:443
+        - name: HONEYCOMB_API_KEY
           valueFrom: 
             configMapKeyRef: 
               name: secrets
-              key: api_key
-        - name: DATASET
+              key: honeycomb_api_key
+        - name: HONEYCOMB_DATASET
           valueFrom: 
             configMapKeyRef: 
               name: secrets
-              key: dataset
+              key: honeycomb_dataset
         - name: OTEL_EXPORTER_OTLP_HEADERS
-          value: x-honeycomb-team=$(API_KEY),x-honeycomb-dataset=$(DATASET)
+          value: x-honeycomb-team=$(HONEYCOMB_API_KEY),x-honeycomb-dataset=$(HONEYCOMB_DATASET)
         - name: POD_IP
           valueFrom:
             fieldRef:
@@ -73,16 +73,6 @@ spec:
           limits:
             cpu: 300m
             memory: 300Mi
-        readinessProbe:
-          initialDelaySeconds: 20
-          periodSeconds: 15
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:9555"]
-        livenessProbe:
-          initialDelaySeconds: 20
-          periodSeconds: 15
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:9555"]
 ---
 apiVersion: v1
 kind: Service
