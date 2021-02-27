@@ -29,14 +29,21 @@ import demo_pb2_grpc
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 
-from opencensus.trace.exporters import stackdriver_exporter
-from opencensus.trace.exporters import print_exporter
-from opencensus.trace.ext.grpc import server_interceptor
-from opencensus.common.transports.async_ import AsyncTransport
-from opencensus.trace.samplers import always_on
+from grpc import ssl_channel_credentials
+
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.trace_exporter import OTLPSpanExporter
+import opentelemetry.instrumentation.grpc
+from opentelemetry.instrumentation.grpc import (
+    GrpcInstrumentorServer,
+    server_interceptor,
+)
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleExportSpanProcessor
 
 # import googleclouddebugger
-import googlecloudprofiler
+# import googlecloudprofiler
 
 from logger import getJSONLogger
 logger = getJSONLogger('emailservice-server')
@@ -119,8 +126,11 @@ class HealthCheck():
       status=health_pb2.HealthCheckResponse.SERVING)
 
 def start(dummy_mode):
-  server = grpc.server(futures.ThreadPoolExecutor(max_workers=10),
-                       interceptors=(tracer_interceptor,))
+
+
+
+  interceptor = server_interceptor()
+  server = grpc.server(futures.ThreadPoolExecutor(max_workers=10),interceptors=[interceptor,])
   service = None
   if dummy_mode:
     service = DummyEmailService()
@@ -140,58 +150,25 @@ def start(dummy_mode):
   except KeyboardInterrupt:
     server.stop(0)
 
-def initStackdriverProfiling():
-  project_id = None
-  try:
-    project_id = os.environ["GCP_PROJECT_ID"]
-  except KeyError:
-    # Environment variable not set
-    pass
-
-  for retry in range(1,4):
-    try:
-      if project_id:
-        googlecloudprofiler.start(service='email_server', service_version='1.0.0', verbose=0, project_id=project_id)
-      else:
-        googlecloudprofiler.start(service='email_server', service_version='1.0.0', verbose=0)
-      logger.info("Successfully started Stackdriver Profiler.")
-      return
-    except (BaseException) as exc:
-      logger.info("Unable to start Stackdriver Profiler Python agent. " + str(exc))
-      if (retry < 4):
-        logger.info("Sleeping %d to retry initializing Stackdriver Profiler"%(retry*10))
-        time.sleep (1)
-      else:
-        logger.warning("Could not initialize Stackdriver Profiler after retrying, giving up")
-  return
 
 
 if __name__ == '__main__':
   logger.info('starting the email service in dummy mode.')
 
-  # Profiler
-  try:
-    if "DISABLE_PROFILER" in os.environ:
-      raise KeyError()
-    else:
-      logger.info("Profiler enabled.")
-      initStackdriverProfiling()
-  except KeyError:
-      logger.info("Profiler disabled.")
 
-  # Tracing
-  try:
-    if "DISABLE_TRACING" in os.environ:
-      raise KeyError()
-    else:
-      logger.info("Tracing enabled.")
-      sampler = always_on.AlwaysOnSampler()
-      exporter = stackdriver_exporter.StackdriverExporter(
-        project_id=os.environ.get('GCP_PROJECT_ID'),
-        transport=AsyncTransport)
-      tracer_interceptor = server_interceptor.OpenCensusServerInterceptor(sampler, exporter)
-  except (KeyError, DefaultCredentialsError):
-      logger.info("Tracing disabled.")
-      tracer_interceptor = server_interceptor.OpenCensusServerInterceptor()
+  otlp_exporter = OTLPSpanExporter(
+	  endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
+  	credentials=ssl_channel_credentials(),
+	  headers=(("x-honeycomb-team", os.environ.get('HONEYCOMB_API_KEY')),("x-honeycomb-dataset",os.environ.get('HONEYCOMB_DATASET')))
+  )
+  
+
+  trace.set_tracer_provider(TracerProvider(resource=Resource({"service.name": "email", "service.version":"0.1"})))
+  trace.get_tracer_provider().add_span_processor(
+      SimpleExportSpanProcessor(otlp_exporter)
+  )
+
+
+  
 
   start(dummy_mode = True)

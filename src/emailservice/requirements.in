@@ -1,7 +1,11 @@
 google-api-core==1.6.0
 grpcio-health-checking==1.12.1
-grpcio==1.16.1
+grpcio
 jinja2==2.10.1
-opencensus[stackdriver]==0.1.10
 python-json-logger==0.1.9
-google-cloud-profiler==1.0.8
+wrapt
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation
+opentelemetry-instrumentation-grpc
+opentelemetry-exporter-otlp
