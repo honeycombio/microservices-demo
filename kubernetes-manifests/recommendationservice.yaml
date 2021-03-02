@@ -45,6 +45,20 @@ spec:
           value: "8080"
         - name: PRODUCT_CATALOG_SERVICE_ADDR
           value: "productcatalogservice:3550"
+        - name: SERVICE_NAME
+          value: recommendation
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: api.honeycomb.io:443
+        - name: HONEYCOMB_API_KEY
+          valueFrom: 
+            configMapKeyRef: 
+              name: secrets
+              key: honeycomb_api_key
+        - name: HONEYCOMB_DATASET
+          valueFrom: 
+            configMapKeyRef: 
+              name: secrets
+              key: honeycomb_dataset
         # - name: DISABLE_TRACING
         #   value: "1"
         # - name: DISABLE_PROFILER
