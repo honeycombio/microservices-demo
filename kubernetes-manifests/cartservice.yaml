@@ -35,6 +35,20 @@ spec:
         env:
         - name: REDIS_ADDR
           value: "redis-cart:6379"
+        - name: SERVICE_NAME
+          value: cart
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: https://api.honeycomb.io:443
+        - name: HONEYCOMB_API_KEY
+          valueFrom: 
+            configMapKeyRef: 
+              name: secrets
+              key: honeycomb_api_key
+        - name: HONEYCOMB_DATASET
+          valueFrom: 
+            configMapKeyRef: 
+              name: secrets
+              key: honeycomb_dataset
         resources:
           requests:
             cpu: 200m
