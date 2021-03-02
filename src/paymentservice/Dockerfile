@@ -43,4 +43,4 @@ COPY . .
 
 EXPOSE 50051
 
-ENTRYPOINT [ "node", "index.js" ]
+ENTRYPOINT [ "node", "-r", "./tracing.js", "index.js" ]

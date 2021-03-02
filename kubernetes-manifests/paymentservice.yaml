@@ -35,6 +35,20 @@ spec:
         env:
         - name: PORT
           value: "50051"
+        - name: SERVICE_NAME
+          value: payment
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: api.honeycomb.io:443
+        - name: HONEYCOMB_API_KEY
+          valueFrom: 
+            configMapKeyRef: 
+              name: secrets
+              key: honeycomb_api_key
+        - name: HONEYCOMB_DATASET
+          valueFrom: 
+            configMapKeyRef: 
+              name: secrets
+              key: honeycomb_dataset
         readinessProbe:
           exec:
             command: ["/bin/grpc_health_probe", "-addr=:50051"]
