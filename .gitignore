@@ -13,3 +13,4 @@ pkg/
 .eclipse.buildship.core.prefs
 release/wi-kubernetes-manifests.yaml
 kubernetes-manifests/secrets.yaml
+secrets/
