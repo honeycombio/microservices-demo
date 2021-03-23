@@ -25,6 +25,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/exporters/otlp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -97,10 +99,10 @@ func initOtelTracing(log logrus.FieldLogger) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	propagator := propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{})
+	otel.SetTextMapPropagator(propagator)
 	otel.SetTracerProvider(
 		trace.NewTracerProvider(
-			trace.WithConfig(trace.Config{DefaultSampler: trace.AlwaysSample()}),
 			trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
 			trace.WithResource(resource.NewWithAttributes(
 				semconv.ServiceNameKey.String("checkout"),
@@ -171,6 +173,8 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	log.Infof("[PlaceOrder] user_id=%q user_currency=%q", req.UserId, req.UserCurrency)
 
 	orderID, err := uuid.NewUUID()
+	orderIDKey := attribute.Key("orderid")
+	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate order uuid")
 	}
