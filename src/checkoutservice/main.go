@@ -33,6 +33,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
+	tracebg "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -173,8 +174,16 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	log.Infof("[PlaceOrder] user_id=%q user_currency=%q", req.UserId, req.UserCurrency)
 
 	orderID, err := uuid.NewUUID()
-	orderIDKey := attribute.Key("orderid")
+
+	var (
+		sessionIDKey = attribute.Key("sessionid")
+		orderIDKey   = attribute.Key("orderid")
+	)
 	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
+	sessionID := attribute.Value.AsString(baggage.Value(ctx, sessionIDKey))
+	span := tracebg.SpanFromContext(ctx)
+	span.SetAttributes(sessionIDKey.String(sessionID), orderIDKey.String(orderID.String()))
+
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate order uuid")
 	}

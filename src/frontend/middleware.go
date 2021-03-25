@@ -21,8 +21,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/baggage"
 )
 
 type ctxKeyLog struct{}
@@ -101,9 +99,6 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 			sessionID = c.Value
 		}
 		ctx := context.WithValue(r.Context(), ctxKeySessionID{}, sessionID)
-		sessionIDKey := attribute.Key("sessionid")
-		ctx = baggage.ContextWithValues(ctx, sessionIDKey.String(sessionID))
-
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	}
