@@ -179,8 +179,11 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		sessionIDKey = attribute.Key("sessionid")
 		orderIDKey   = attribute.Key("orderid")
 	)
+
+	v := baggage.Value(ctx, sessionIDKey)
+	sessionID := v.AsString()
+
 	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
-	sessionID := attribute.Value.AsString(baggage.Value(ctx, sessionIDKey))
 	span := tracebg.SpanFromContext(ctx)
 	span.SetAttributes(sessionIDKey.String(sessionID), orderIDKey.String(orderID.String()))
 
