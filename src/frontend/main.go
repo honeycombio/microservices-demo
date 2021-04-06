@@ -178,10 +178,11 @@ func initOtelTracing(log logrus.FieldLogger) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	//otel.SetTextMapPropagator(propagation.TraceContext{})
+	propagator := propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{})
+	otel.SetTextMapPropagator(propagator)
 	otel.SetTracerProvider(
 		trace.NewTracerProvider(
-			trace.WithConfig(trace.Config{DefaultSampler: trace.AlwaysSample()}),
 			trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
 			trace.WithResource(resource.NewWithAttributes(
 				semconv.ServiceNameKey.String("frontend"),

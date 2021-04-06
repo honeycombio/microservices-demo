@@ -25,12 +25,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/exporters/otlp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
+	tracebg "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -97,10 +100,10 @@ func initOtelTracing(log logrus.FieldLogger) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	propagator := propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{})
+	otel.SetTextMapPropagator(propagator)
 	otel.SetTracerProvider(
 		trace.NewTracerProvider(
-			trace.WithConfig(trace.Config{DefaultSampler: trace.AlwaysSample()}),
 			trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
 			trace.WithResource(resource.NewWithAttributes(
 				semconv.ServiceNameKey.String("checkout"),
@@ -171,6 +174,19 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	log.Infof("[PlaceOrder] user_id=%q user_currency=%q", req.UserId, req.UserCurrency)
 
 	orderID, err := uuid.NewUUID()
+
+	var (
+		sessionIDKey = attribute.Key("sessionid")
+		orderIDKey   = attribute.Key("orderid")
+	)
+
+	v := baggage.Value(ctx, sessionIDKey)
+	sessionID := v.AsString()
+
+	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
+	span := tracebg.SpanFromContext(ctx)
+	span.SetAttributes(sessionIDKey.String(sessionID), orderIDKey.String(orderID.String()))
+
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate order uuid")
 	}
