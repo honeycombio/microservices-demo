@@ -14,6 +14,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using System.Collections.Generic;
 namespace cartservice
 {
     public class Startup
@@ -30,27 +31,22 @@ namespace cartservice
         public void ConfigureServices(IServiceCollection services)
         {
             string servicename = Environment.GetEnvironmentVariable("SERVICE_NAME");
+            string podip = Environment.GetEnvironmentVariable("POD_IP");
             string otlpendpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
-            string honeycombteam = Environment.GetEnvironmentVariable("HONEYCOMB_API_KEY");
-            string honeycombdataset = Environment.GetEnvironmentVariable("HONEYCOMB_DATASET");
-            if(servicename == null || otlpendpoint == null || honeycombteam == null || honeycombdataset == null) {
+            IEnumerable<KeyValuePair<string, object>> attributes = new Dictionary<string,object> { {"ip", podip}};
+            if(servicename == null || otlpendpoint == null ) {
                 Console.WriteLine("Enviornment variables missing or empty.");
             } else {
                 Console.WriteLine("Starting up the open telemetry service");
+                AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
                 services.AddOpenTelemetryTracing((builder) => builder
-                    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(servicename))
+                    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(servicename).AddAttributes(attributes))
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddOtlpExporter(otlpOptions =>
                     {
                         otlpOptions.Endpoint = new Uri(otlpendpoint);
-                        otlpOptions.GrpcChannelOptions = new GrpcChannelOptions{
-                                Credentials = new SslCredentials()
-                            };
-
                         var headers = new Grpc.Core.Metadata();
-                        headers.Add("x-honeycomb-team", honeycombteam);
-                        headers.Add("x-honeycomb-dataset", honeycombdataset);
                         otlpOptions.Headers = headers;
                     }));
             }

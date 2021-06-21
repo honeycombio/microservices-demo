@@ -38,17 +38,13 @@ spec:
         - name: SERVICE_NAME
           value: cart
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: https://api.honeycomb.io:443
-        - name: HONEYCOMB_API_KEY
-          valueFrom: 
-            configMapKeyRef: 
-              name: secrets
-              key: honeycomb_api_key
-        - name: HONEYCOMB_DATASET
-          valueFrom: 
-            configMapKeyRef: 
-              name: secrets
-              key: honeycomb_dataset
+          value: http://opentelemetry-collector:55680
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: ip=$(POD_IP)
         resources:
           requests:
             cpu: 200m

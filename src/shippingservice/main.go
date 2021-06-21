@@ -28,13 +28,10 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
@@ -60,40 +57,24 @@ func init() {
 	log.Out = os.Stdout
 }
 func initOtelTracing(log logrus.FieldLogger) {
-	apikey := os.Getenv("HONEYCOMB_API_KEY")
-	dataset := os.Getenv("HONEYCOMB_DATASET")
 	otlpendpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if otlpendpoint == "" {
 		otlpendpoint = "api.honeycomb.io:443"
 	}
-	if apikey == "" {
-		log.Panicln("Honeycomb API key is required. Provide using the environment variable \"HONEYCOMB_API_KEY\".")
-	}
-	if dataset == "" {
-		dataset = "golang-otlp"
-	}
 	ctx := context.Background()
-	creds := credentials.NewClientTLSFromCert(nil, "")
+	//creds := credentials.NewClientTLSFromCert(nil, "")
 	driver := otlpgrpc.NewDriver(
-		otlpgrpc.WithTLSCredentials(creds),
-		otlpgrpc.WithEndpoint(otlpendpoint),
-		otlpgrpc.WithHeaders(map[string]string{
-			"x-honeycomb-team":    apikey,
-			"x-honeycomb-dataset": dataset,
-		}))
+		otlpgrpc.WithInsecure(),
+		otlpgrpc.WithEndpoint(otlpendpoint))
 	exporter, err := otlp.NewExporter(ctx, driver)
 	if err != nil {
 		log.Fatal(err)
 	}
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	propagator := propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{})
+	otel.SetTextMapPropagator(propagator)
 	otel.SetTracerProvider(
 		trace.NewTracerProvider(
-			trace.WithConfig(trace.Config{DefaultSampler: trace.AlwaysSample()}),
 			trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
-			trace.WithResource(resource.NewWithAttributes(
-				semconv.ServiceNameKey.String("shipping"),
-				semconv.ServiceVersionKey.String("0.1"),
-			)),
 		),
 	)
 }

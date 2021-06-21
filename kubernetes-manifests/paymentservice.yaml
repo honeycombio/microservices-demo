@@ -35,20 +35,21 @@ spec:
         env:
         - name: PORT
           value: "50051"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: grpc://opentelemetry-collector:55680
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         - name: SERVICE_NAME
           value: payment
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: api.honeycomb.io:443
-        - name: HONEYCOMB_API_KEY
-          valueFrom: 
-            configMapKeyRef: 
-              name: secrets
-              key: honeycomb_api_key
-        - name: HONEYCOMB_DATASET
-          valueFrom: 
-            configMapKeyRef: 
-              name: secrets
-              key: honeycomb_dataset
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        #Bug in Nodejs picking up resource attributes https://github.com/open-telemetry/opentelemetry-js/issues/2259
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service_name=payment,ip=$(POD_IP)
         readinessProbe:
           exec:
             command: ["/bin/grpc_health_probe", "-addr=:50051"]

@@ -38,28 +38,15 @@ spec:
         - name: DISABLE_STATS
           value: "1"
         - name: DISABLE_TRACING
-          value: "1"
+          value: "0"
         #- name: JAEGER_SERVICE_ADDR
         #  value: "jaeger-collector:14268"
-
         - name: OTEL_TRACES_EXPORTER
           value: otlp
         - name: OTEL_METRICS_EXPORTER
           value: none
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: https://api.honeycomb.io:443
-        - name: HONEYCOMB_API_KEY
-          valueFrom: 
-            configMapKeyRef: 
-              name: secrets
-              key: honeycomb_api_key
-        - name: HONEYCOMB_DATASET
-          valueFrom: 
-            configMapKeyRef: 
-              name: secrets
-              key: honeycomb_dataset
-        - name: OTEL_EXPORTER_OTLP_HEADERS
-          value: x-honeycomb-team=$(HONEYCOMB_API_KEY),x-honeycomb-dataset=$(HONEYCOMB_DATASET)
+          value: http://opentelemetry-collector:55680
         - name: POD_IP
           valueFrom:
             fieldRef:

@@ -126,9 +126,6 @@ class HealthCheck():
       status=health_pb2.HealthCheckResponse.SERVING)
 
 def start(dummy_mode):
-
-
-
   interceptor = server_interceptor()
   server = grpc.server(futures.ThreadPoolExecutor(max_workers=10),interceptors=[interceptor,])
   service = None
@@ -158,12 +155,11 @@ if __name__ == '__main__':
 
   otlp_exporter = OTLPSpanExporter(
 	  endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
-  	credentials=ssl_channel_credentials(),
-	  headers=(("x-honeycomb-team", os.environ.get('HONEYCOMB_API_KEY')),("x-honeycomb-dataset",os.environ.get('HONEYCOMB_DATASET')))
+    insecure=True
   )
   
 
-  trace.set_tracer_provider(TracerProvider(resource=Resource({"service.name": "email", "service.version":"0.1"})))
+  trace.set_tracer_provider(TracerProvider(resource=Resource({"service.name": "email", "service.version":"0.1", "ip": os.environ.get('POD_IP')})))
   trace.get_tracer_provider().add_span_processor(
       SimpleExportSpanProcessor(otlp_exporter)
   )

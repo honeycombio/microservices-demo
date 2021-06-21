@@ -14,7 +14,7 @@ description = 'Ad Service'
 group = "adservice"
 version = "0.1.0-SNAPSHOT"
 
-def opentelemetryVersion = "0.17.0"
+def opentelemetryVersion = "1.3.0"
 def grpcVersion = "1.26.0"
 def jacksonVersion = "2.10.2"
 def protocVersion = "3.11.4"
@@ -97,7 +97,7 @@ task adService(type: CreateStartScripts) {
     applicationName = 'AdService'
     outputDir = new File(project.buildDir, 'tmp')
     classpath = startScripts.classpath
-    defaultJvmOpts = ["-javaagent:/opt/otel/javaagent.jar"]
+    defaultJvmOpts = ["-javaagent:/opt/otel/javaagent.jar"]//, "-Dotel.javaagent.debug=true"]
 }
 
 task adServiceClient(type: CreateStartScripts) {
@@ -105,7 +105,7 @@ task adServiceClient(type: CreateStartScripts) {
     applicationName = 'AdServiceClient'
     outputDir = new File(project.buildDir, 'tmp')
     classpath = startScripts.classpath
-    defaultJvmOpts = ["-javaagent:/opt/otel/javaagent.jar"]
+    defaultJvmOpts = ["-javaagent:/opt/otel/javaagent.jar"]//, "-Dotel.javaagent.debug=true"]
 }
 
 applicationDistribution.into('bin') {

@@ -18,11 +18,11 @@ require (
 	google.golang.org/appengine v1.6.1 // indirect
 	google.golang.org/genproto v0.0.0-20190708153700-3bdd9d9f5532 // indirect
 	google.golang.org/grpc v1.35.0
-	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.17.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.17.0
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.17.0
-	go.opentelemetry.io/otel v0.17.0
-	go.opentelemetry.io/otel/exporters/otlp v0.17.0
-	go.opentelemetry.io/otel/sdk v0.17.0
-	go.opentelemetry.io/otel/trace v0.17.0
+	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.20.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.20.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.20.0
+	go.opentelemetry.io/otel v0.20.0
+	go.opentelemetry.io/otel/exporters/otlp v0.20.0
+	go.opentelemetry.io/otel/sdk v0.20.0
+	go.opentelemetry.io/otel/trace v0.20.0
 )

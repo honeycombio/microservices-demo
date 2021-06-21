@@ -33,9 +33,7 @@ RUN apt-get -y update && apt-get install -qqy \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/otel && \
-    wget -q -O opt/otel/javaagent.jar https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v0.17.0/opentelemetry-javaagent-all.jar
-
-
+    wget -q -O opt/otel/javaagent.jar https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.3.0/opentelemetry-javaagent-all.jar
 WORKDIR /app
 COPY --from=builder /app .
 
