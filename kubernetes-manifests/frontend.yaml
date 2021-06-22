@@ -66,6 +66,8 @@ spec:
             value: "checkoutservice:5050"
           - name: AD_SERVICE_ADDR
             value: "adservice:9555"
+          - name: FORCE_USER
+            value: "0"
           - name: ENV_PLATFORM
             value: "gcp"
           - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -85,10 +87,10 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 64Mi
+              memory: 32Mi
             limits:
               cpu: 200m
-              memory: 128Mi
+              memory: 32Mi
 ---
 apiVersion: v1
 kind: Service

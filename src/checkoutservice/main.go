@@ -159,6 +159,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	var (
 		sessionIDKey = attribute.Key("sessionid")
 		orderIDKey   = attribute.Key("orderid")
+		userIDKey = attribute.Key("userid")
 	)
 
 	v := baggage.Value(ctx, sessionIDKey)
@@ -166,7 +167,8 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 
 	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
 	span := tracebg.SpanFromContext(ctx)
-	span.SetAttributes(sessionIDKey.String(sessionID), orderIDKey.String(orderID.String()))
+	span.SetAttributes(sessionIDKey.String(sessionID), orderIDKey.String(orderID.String()), userIDKey.String(req.UserId))
+	
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate order uuid")
@@ -269,6 +271,12 @@ func (cs *checkoutService) quoteShipping(ctx context.Context, address *pb.Addres
 }
 
 func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*pb.CartItem, error) {
+	var (
+		userIDKey = attribute.Key("userid")
+	)
+
+	span := tracebg.SpanFromContext(ctx)
+	span.SetAttributes(userIDKey.String(userID))
 	conn, err := grpc.DialContext(ctx, cs.cartSvcAddr, grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
