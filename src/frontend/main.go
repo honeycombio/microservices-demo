@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"os"
 	"time"
-
+	"github.com/patrickmn/go-cache"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -52,6 +52,7 @@ var (
 		"JPY": true,
 		"GBP": true,
 		"TRY": true}
+	requestcache = cache.New(5*time.Minute, 10*time.Minute)
 )
 
 type ctxKeySessionID struct{}

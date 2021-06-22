@@ -18,7 +18,7 @@ import (
 	"context"
 	"net/http"
 	"time"
-
+	"github.com/patrickmn/go-cache"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -57,7 +57,6 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	requestID, _ := uuid.NewRandom()
 	ctx = context.WithValue(ctx, ctxKeyRequestID{}, requestID.String())
-
 	start := time.Now()
 	rr := &responseRecorder{w: w}
 	log := lh.log.WithFields(logrus.Fields{
@@ -65,7 +64,10 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"http.req.method": r.Method,
 		"http.req.id":     requestID.String(),
 	})
+	
+
 	if v, ok := r.Context().Value(ctxKeySessionID{}).(string); ok {
+		requestcache.Set(requestID.String(), v, cache.NoExpiration)
 		log = log.WithField("session", v)
 	}
 	log.Debug("request started")
