@@ -20,7 +20,7 @@ import (
 	"net"
 	"os"
 	"time"
-
+	"math/rand"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -224,6 +224,29 @@ type orderPrep struct {
 	shippingCostLocalized *pb.Money
 }
 
+func loadDiscountFromDatabase(u string) (string) {
+	rnum := rand.Intn(10) + 1
+	time.Sleep((time.Duration(rnum)) * time.Second)
+	return "10"
+}
+
+
+func getDiscounts(ctx context.Context, u string)(string) {
+	tracer := otel.GetTracerProvider().Tracer("")
+	ctx, span := tracer.Start(ctx, "getDiscounts")
+	var (
+		userIDKey = attribute.Key("sessionid")
+	)
+	span.SetAttributes(userIDKey.String(u))
+	defer span.End()
+	if u == "honecomb-user-bees-1234-314159265359" {
+		return loadDiscountFromDatabase(u)
+	} else {
+		return ""
+	}
+	
+}
+
 func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context.Context, userID, userCurrency string, address *pb.Address) (orderPrep, error) {
 	var out orderPrep
 	cartItems, err := cs.getUserCart(ctx, userID)
@@ -234,6 +257,13 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 	if err != nil {
 		return out, fmt.Errorf("failed to prepare order: %+v", err)
 	}
+
+	discount := getDiscounts(ctx, userID)
+	if discount != "" {
+		fmt.Sprintf("Got a discount: %v.", discount)
+	}
+
+
 	shippingUSD, err := cs.quoteShipping(ctx, address, cartItems)
 	if err != nil {
 		return out, fmt.Errorf("shipping quote failure: %+v", err)
@@ -272,7 +302,7 @@ func (cs *checkoutService) quoteShipping(ctx context.Context, address *pb.Addres
 
 func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*pb.CartItem, error) {
 	var (
-		userIDKey = attribute.Key("userid")
+		userIDKey = attribute.Key("sessionid")
 	)
 
 	span := tracebg.SpanFromContext(ctx)

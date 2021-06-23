@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"strconv"
 	"github.com/patrickmn/go-cache"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -79,7 +80,8 @@ type frontendServer struct {
 	adSvcAddr string
 	adSvcConn *grpc.ClientConn
 }
-
+var FORCEUSER = "0"
+var PERCENTNORMAL = 100
 func main() {
 	ctx := context.Background()
 	log := logrus.New()
@@ -93,7 +95,13 @@ func main() {
 		TimestampFormat: time.RFC3339Nano,
 	}
 	log.Out = os.Stdout
-
+	FORCEUSER = os.Getenv("FORCE_USER")
+	p_i, converterror := strconv.Atoi(os.Getenv("PERCENT_NORMAL"))
+	if converterror != nil {
+		PERCENTNORMAL = p_i
+	} else {
+		PERCENTNORMAL = 100
+	}
 	if os.Getenv("DISABLE_TRACING") == "" {
 		log.Info("Tracing enabled.")
 		//go initTracing(log)

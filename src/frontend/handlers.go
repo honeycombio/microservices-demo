@@ -31,7 +31,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/trace"
-	"go.opentelemetry.io/otel"
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/frontend/genproto"
 	"github.com/GoogleCloudPlatform/microservices-demo/src/frontend/money"
 )
@@ -290,27 +289,6 @@ func (fe *frontendServer) viewCartHandler(w http.ResponseWriter, r *http.Request
 		log.Println(err)
 	}
 }
-func loadDiscountFromDatabase(u string) {
-	rnum := rand.Intn(10) + 1
-	time.Sleep((time.Duration(rnum)) * time.Second)
-	return 
-}
-
-func getDiscounts(ctx context.Context, u string) {
-	tracer := otel.GetTracerProvider().Tracer("")
-	ctx, span := tracer.Start(ctx, "getDiscounts")
-	defer span.End()
-
-
-	foo, found := requestcache.Get(u)
-	if found && foo.(string) == "honeycomb-bees-user" {
-		return 
-	} else {
-		loadDiscountFromDatabase(u)
-		return 
-	}
-	
-}
 
 func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Request) {
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
@@ -343,10 +321,6 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	ctx = baggage.ContextWithValues(ctx, sessionIDKey.String(s))
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(sessionIDKey.String(s), emailKey.String(email), zipcodeKey.Int64(zipCode), stateKey.String(state), countryKey.String(country))
-	if s == "honecomb-user-bees-1234-314159265359" {
-		getDiscounts(ctx, s)
-	}
-
 
 	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
 		PlaceOrder(ctx, &pb.PlaceOrderRequest{

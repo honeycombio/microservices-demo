@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"math/rand"
 	"time"
-	"os"
 	"github.com/patrickmn/go-cache"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -84,16 +83,16 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r = r.WithContext(ctx)
 	lh.next.ServeHTTP(rr, r)
 }
-var forceuser = os.Getenv("FORCE_USER")
+
 func ensureSessionID(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var sessionID string
 		var min = 1
-		var max = 20
+		var max = 100
 		c, err := r.Cookie(cookieSessionID)
 		if err == http.ErrNoCookie {
 			rnum := rand.Intn(max - min + 1) + min
-			if rnum <= 15 && !(forceuser == "1") {
+			if rnum <= PERCENTNORMAL && !(FORCEUSER == "1") {
 				u, _ := uuid.NewRandom()
 				sessionID = u.String()
 			} else {

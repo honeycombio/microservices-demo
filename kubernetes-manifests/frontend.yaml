@@ -68,6 +68,8 @@ spec:
             value: "adservice:9555"
           - name: FORCE_USER
             value: "0"
+          - name: PERCENT_NORMAL
+            value: "90"
           - name: ENV_PLATFORM
             value: "gcp"
           - name: OTEL_EXPORTER_OTLP_ENDPOINT
