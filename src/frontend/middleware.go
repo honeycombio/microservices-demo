@@ -89,27 +89,31 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 		var sessionID string
 		var min = 1
 		var max = 100
-		c, err := r.Cookie(cookieSessionID)
-		if err == http.ErrNoCookie {
-			rnum := rand.Intn(max - min + 1) + min
-			if rnum <= PERCENTNORMAL && !(FORCEUSER == "1") {
-				u, _ := uuid.NewRandom()
-				sessionID = u.String()
+		rnum := rand.Intn(max - min + 1) + min
+		if rnum <= PERCENTNORMAL && !(FORCEUSER == "1") {
+			c, err := r.Cookie(cookieSessionID)
+			u, _ := uuid.NewRandom()
+			sessionID = u.String()
+			if err == http.ErrNoCookie {
+				http.SetCookie(w, &http.Cookie{
+					Name:   cookieSessionID,
+					Value:  sessionID,
+					MaxAge: cookieMaxAge,
+				})
+			} else if err != nil {
+				return
 			} else {
-				sessionID = "honecomb-user-bees-1234-314159265359"
+				sessionID = c.Value
 			}
-
-			
+		} else {
+			sessionID = "honecomb-user-bees-1234-314159265359"
 			http.SetCookie(w, &http.Cookie{
 				Name:   cookieSessionID,
 				Value:  sessionID,
 				MaxAge: cookieMaxAge,
 			})
-		} else if err != nil {
-			return
-		} else {
-			sessionID = c.Value
 		}
+
 		ctx := context.WithValue(r.Context(), ctxKeySessionID{}, sessionID)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)

@@ -38,7 +38,7 @@ import (
 const (
 	port            = "8080"
 	defaultCurrency = "USD"
-	cookieMaxAge    = 60 * 60 * 48
+	cookieMaxAge    = 5//60 * 60 * 48
 
 	cookiePrefix    = "shop_"
 	cookieSessionID = cookiePrefix + "session-id"
@@ -98,9 +98,9 @@ func main() {
 	FORCEUSER = os.Getenv("FORCE_USER")
 	p_i, converterror := strconv.Atoi(os.Getenv("PERCENT_NORMAL"))
 	if converterror != nil {
-		PERCENTNORMAL = p_i
-	} else {
 		PERCENTNORMAL = 100
+	} else {
+		PERCENTNORMAL = p_i
 	}
 	if os.Getenv("DISABLE_TRACING") == "" {
 		log.Info("Tracing enabled.")

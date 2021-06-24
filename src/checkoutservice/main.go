@@ -225,7 +225,15 @@ type orderPrep struct {
 }
 
 func loadDiscountFromDatabase(u string) (string) {
-	rnum := rand.Intn(10) + 1
+	currentTime := time.Now()
+	hour := currentTime.Hour()
+	minute := currentTime.Minute()
+	rnum := 0
+	if (hour % 2) == 0 {
+		min := int(minute / 5)
+		max := int(minute / 3)
+		rnum = rand.Intn(max - min + 1) + min
+	}
 	time.Sleep((time.Duration(rnum)) * time.Second)
 	return "10"
 }
