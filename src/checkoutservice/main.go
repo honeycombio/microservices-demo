@@ -157,17 +157,16 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	orderID, err := uuid.NewUUID()
 
 	var (
-		sessionIDKey = attribute.Key("sessionid")
 		orderIDKey   = attribute.Key("orderid")
 		userIDKey = attribute.Key("userid")
 	)
 
-	v := baggage.Value(ctx, sessionIDKey)
-	sessionID := v.AsString()
+	v := baggage.Value(ctx, userIDKey)
+	userID := v.AsString()
 
 	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
 	span := tracebg.SpanFromContext(ctx)
-	span.SetAttributes(sessionIDKey.String(sessionID), orderIDKey.String(orderID.String()), userIDKey.String(req.UserId))
+	span.SetAttributes(userIDKey.String(userID), orderIDKey.String(orderID.String()))
 	
 
 	if err != nil {
@@ -243,11 +242,13 @@ func getDiscounts(ctx context.Context, u string)(string) {
 	tracer := otel.GetTracerProvider().Tracer("")
 	ctx, span := tracer.Start(ctx, "getDiscounts")
 	var (
-		userIDKey = attribute.Key("sessionid")
+		userIDKey = attribute.Key("userid")
 	)
 	span.SetAttributes(userIDKey.String(u))
 	defer span.End()
-	if u == "honecomb-user-bees-1234-314159265359" {
+	if u == "honecomb-user-bees-20109" {
+		return loadDiscountFromDatabase(u)
+	} else if (rand.Intn(100 - 1 + 1) < 15 ){
 		return loadDiscountFromDatabase(u)
 	} else {
 		return ""
@@ -310,7 +311,7 @@ func (cs *checkoutService) quoteShipping(ctx context.Context, address *pb.Addres
 
 func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*pb.CartItem, error) {
 	var (
-		userIDKey = attribute.Key("sessionid")
+		userIDKey = attribute.Key("userid")
 	)
 
 	span := tracebg.SpanFromContext(ctx)

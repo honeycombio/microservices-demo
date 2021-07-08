@@ -312,15 +312,11 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	ctx := r.Context()
 
 	var (
-		sessionIDKey = attribute.Key("sessionid")
-		emailKey     = attribute.Key("email")
-		zipcodeKey   = attribute.Key("zipcode")
-		stateKey     = attribute.Key("state")
-		countryKey   = attribute.Key("country")
+		userIDKey = attribute.Key("userid")
 	)
-	ctx = baggage.ContextWithValues(ctx, sessionIDKey.String(s))
+	ctx = baggage.ContextWithValues(ctx, userIDKey.String(s))
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(sessionIDKey.String(s), emailKey.String(email), zipcodeKey.Int64(zipCode), stateKey.String(state), countryKey.String(country))
+	span.SetAttributes(userIDKey.String(s))
 
 	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
 		PlaceOrder(ctx, &pb.PlaceOrderRequest{

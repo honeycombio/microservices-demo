@@ -54,7 +54,7 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         - name: OTEL_RESOURCE_ATTRIBUTES
-          value: service_name=recommendation,ip=$(POD_IP)
+          value: service.name=recommendation,ip=$(POD_IP)
         # - name: DISABLE_TRACING
         #   value: "1"
         # - name: DISABLE_PROFILER

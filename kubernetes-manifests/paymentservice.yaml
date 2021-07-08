@@ -49,7 +49,7 @@ spec:
               fieldPath: status.podIP
         #Bug in Nodejs picking up resource attributes https://github.com/open-telemetry/opentelemetry-js/issues/2259
         - name: OTEL_RESOURCE_ATTRIBUTES
-          value: service_name=payment,ip=$(POD_IP)
+          value: service.name=payment,ip=$(POD_IP)
         readinessProbe:
           exec:
             command: ["/bin/grpc_health_probe", "-addr=:50051"]

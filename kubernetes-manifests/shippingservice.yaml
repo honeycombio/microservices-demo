@@ -41,7 +41,7 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         - name: OTEL_RESOURCE_ATTRIBUTES
-          value: service_name=shipping,ip=$(POD_IP)
+          value: service.name=shipping,ip=$(POD_IP)
         # - name: DISABLE_STATS
         #   value: "1"
         # - name: DISABLE_TRACING

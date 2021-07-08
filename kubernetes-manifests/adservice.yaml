@@ -52,7 +52,7 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         - name: OTEL_RESOURCE_ATTRIBUTES
-          value: service_name=adservice,ip=$(POD_IP)
+          value: service.name=adservice,ip=$(POD_IP)
         resources:
           requests:
             cpu: 200m
