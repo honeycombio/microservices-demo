@@ -238,7 +238,7 @@ func loadDiscountFromDatabase(ctx context.Context, u string) (string) {
 	minute := currentTime.Minute()
 	rnum := 0
 	if (hour == 0 || hour == 8 || hour == 16) {
-		if (minute <= 30 && minute <= 45) {
+		if (minute >= 30 && minute <= 45) {
 			diff := minute - 30;
 			min := int(diff / 2 + 1)
 			max := int(diff + 2)
@@ -262,7 +262,7 @@ func getDiscounts(ctx context.Context, u string)(string) {
 	)
 	span.SetAttributes(userIDKey.String(u))
 	defer span.End()
-	if u == "honecomb-user-bees-20109" {
+	if u == "honeycomb-user-bees-20109" {
 		return loadDiscountFromDatabase(ctx, u)
 	} else if (rand.Intn(100 - 1 + 1) < 15 ){
 		return loadDiscountFromDatabase(ctx, u)

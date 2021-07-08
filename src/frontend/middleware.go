@@ -106,7 +106,7 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 				sessionID = c.Value
 			}
 		} else {
-			sessionID = "honecomb-user-bees-20109"
+			sessionID = "honeycomb-user-bees-20109"
 			http.SetCookie(w, &http.Cookie{
 				Name:   cookieSessionID,
 				Value:  sessionID,
