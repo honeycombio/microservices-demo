@@ -222,18 +222,34 @@ type orderPrep struct {
 	cartItems             []*pb.CartItem
 	shippingCostLocalized *pb.Money
 }
-
-func loadDiscountFromDatabase(u string) (string) {
+func mockDatabaseCall(ctx context.Context) {
+	tracer := otel.GetTracerProvider().Tracer("")
+	ctx, span := tracer.Start(ctx, "SQL SELECT")
+	var (
+		querykey = attribute.Key("db.query")
+	)
+	span.SetAttributes(querykey.String("select * from discounts where user = ?"))
+	defer span.End()
+	time.Sleep((time.Duration(1)) * time.Second)
+}
+func loadDiscountFromDatabase(ctx context.Context, u string) (string) {
 	currentTime := time.Now()
 	hour := currentTime.Hour()
 	minute := currentTime.Minute()
 	rnum := 0
-	if (hour % 2) == 0 {
-		min := int(minute / 5)
-		max := int(minute / 3)
-		rnum = rand.Intn(max - min + 1) + min
+	if (hour == 0 || hour == 8 || hour == 16) {
+		if (minute <= 30 && minute <= 45) {
+			diff := minute - 30;
+			min := int(diff / 2 + 1)
+			max := int(diff + 2)
+			rnum = rand.Intn(max - min + 1) + min
+		}
+
 	}
-	time.Sleep((time.Duration(rnum)) * time.Second)
+	for i:=1; i < rnum; i++ {
+		mockDatabaseCall(ctx)
+	}
+	
 	return "10"
 }
 
@@ -247,9 +263,9 @@ func getDiscounts(ctx context.Context, u string)(string) {
 	span.SetAttributes(userIDKey.String(u))
 	defer span.End()
 	if u == "honecomb-user-bees-20109" {
-		return loadDiscountFromDatabase(u)
+		return loadDiscountFromDatabase(ctx, u)
 	} else if (rand.Intn(100 - 1 + 1) < 15 ){
-		return loadDiscountFromDatabase(u)
+		return loadDiscountFromDatabase(ctx, u)
 	} else {
 		return ""
 	}
