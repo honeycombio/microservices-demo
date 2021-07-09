@@ -31,7 +31,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/trace"
-
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/frontend/genproto"
 	"github.com/GoogleCloudPlatform/microservices-demo/src/frontend/money"
 )
@@ -306,21 +305,18 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 		ccMonth, _    = strconv.ParseInt(r.FormValue("credit_card_expiration_month"), 10, 32)
 		ccYear, _     = strconv.ParseInt(r.FormValue("credit_card_expiration_year"), 10, 32)
 		ccCVV, _      = strconv.ParseInt(r.FormValue("credit_card_cvv"), 10, 32)
+		s             = sessionID(r)
 	)
+
 
 	ctx := r.Context()
 
 	var (
-		sessionIDKey = attribute.Key("sessionid")
-		emailKey     = attribute.Key("email")
-		zipcodeKey   = attribute.Key("zipcode")
-		stateKey     = attribute.Key("state")
-		countryKey   = attribute.Key("country")
+		userIDKey = attribute.Key("userid")
 	)
-
-	ctx = baggage.ContextWithValues(ctx, sessionIDKey.String(sessionID(r)))
+	ctx = baggage.ContextWithValues(ctx, userIDKey.String(s))
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(sessionIDKey.String(sessionID(r)), emailKey.String(email), zipcodeKey.Int64(zipCode), stateKey.String(state), countryKey.String(country))
+	span.SetAttributes(userIDKey.String(s))
 
 	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
 		PlaceOrder(ctx, &pb.PlaceOrderRequest{

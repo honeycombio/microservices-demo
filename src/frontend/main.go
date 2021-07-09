@@ -20,7 +20,8 @@ import (
 	"net/http"
 	"os"
 	"time"
-
+	"strconv"
+	"github.com/patrickmn/go-cache"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -30,17 +31,14 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 const (
 	port            = "8080"
 	defaultCurrency = "USD"
-	cookieMaxAge    = 60 * 60 * 48
+	cookieMaxAge    = 5//60 * 60 * 48
 
 	cookiePrefix    = "shop_"
 	cookieSessionID = cookiePrefix + "session-id"
@@ -55,6 +53,7 @@ var (
 		"JPY": true,
 		"GBP": true,
 		"TRY": true}
+	requestcache = cache.New(5*time.Minute, 10*time.Minute)
 )
 
 type ctxKeySessionID struct{}
@@ -81,7 +80,8 @@ type frontendServer struct {
 	adSvcAddr string
 	adSvcConn *grpc.ClientConn
 }
-
+var FORCEUSER = "0"
+var PERCENTNORMAL = 100
 func main() {
 	ctx := context.Background()
 	log := logrus.New()
@@ -95,7 +95,13 @@ func main() {
 		TimestampFormat: time.RFC3339Nano,
 	}
 	log.Out = os.Stdout
-
+	FORCEUSER = os.Getenv("FORCE_USER")
+	p_i, converterror := strconv.Atoi(os.Getenv("PERCENT_NORMAL"))
+	if converterror != nil {
+		PERCENTNORMAL = 100
+	} else {
+		PERCENTNORMAL = p_i
+	}
 	if os.Getenv("DISABLE_TRACING") == "" {
 		log.Info("Tracing enabled.")
 		//go initTracing(log)
@@ -152,42 +158,26 @@ func main() {
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
 }
 
+
 func initOtelTracing(log logrus.FieldLogger) {
-	apikey := os.Getenv("HONEYCOMB_API_KEY")
-	dataset := os.Getenv("HONEYCOMB_DATASET")
 	otlpendpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if otlpendpoint == "" {
 		otlpendpoint = "api.honeycomb.io:443"
 	}
-	if apikey == "" {
-		log.Panicln("Honeycomb API key is required. Provide using the environment variable \"HONEYCOMB_API_KEY\".")
-	}
-	if dataset == "" {
-		dataset = "golang-otlp"
-	}
 	ctx := context.Background()
-	creds := credentials.NewClientTLSFromCert(nil, "")
+	//creds := credentials.NewClientTLSFromCert(nil, "")
 	driver := otlpgrpc.NewDriver(
-		otlpgrpc.WithTLSCredentials(creds),
-		otlpgrpc.WithEndpoint(otlpendpoint),
-		otlpgrpc.WithHeaders(map[string]string{
-			"x-honeycomb-team":    apikey,
-			"x-honeycomb-dataset": dataset,
-		}))
+		otlpgrpc.WithInsecure(),
+		otlpgrpc.WithEndpoint(otlpendpoint))
 	exporter, err := otlp.NewExporter(ctx, driver)
 	if err != nil {
 		log.Fatal(err)
 	}
-	//otel.SetTextMapPropagator(propagation.TraceContext{})
 	propagator := propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{})
 	otel.SetTextMapPropagator(propagator)
 	otel.SetTracerProvider(
 		trace.NewTracerProvider(
 			trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
-			trace.WithResource(resource.NewWithAttributes(
-				semconv.ServiceNameKey.String("frontend"),
-				semconv.ServiceVersionKey.String("0.1"),
-			)),
 		),
 	)
 }

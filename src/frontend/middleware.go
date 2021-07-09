@@ -17,8 +17,9 @@ package main
 import (
 	"context"
 	"net/http"
+	"math/rand"
 	"time"
-
+	"github.com/patrickmn/go-cache"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -57,7 +58,6 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	requestID, _ := uuid.NewRandom()
 	ctx = context.WithValue(ctx, ctxKeyRequestID{}, requestID.String())
-
 	start := time.Now()
 	rr := &responseRecorder{w: w}
 	log := lh.log.WithFields(logrus.Fields{
@@ -65,7 +65,10 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"http.req.method": r.Method,
 		"http.req.id":     requestID.String(),
 	})
+	
+
 	if v, ok := r.Context().Value(ctxKeySessionID{}).(string); ok {
+		requestcache.Set(requestID.String(), v, cache.NoExpiration)
 		log = log.WithField("session", v)
 	}
 	log.Debug("request started")
@@ -84,20 +87,33 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func ensureSessionID(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var sessionID string
-		c, err := r.Cookie(cookieSessionID)
-		if err == http.ErrNoCookie {
+		var min = 1
+		var max = 100
+		rnum := rand.Intn(max - min + 1) + min
+		if rnum <= PERCENTNORMAL && !(FORCEUSER == "1") {
+			c, err := r.Cookie(cookieSessionID)
 			u, _ := uuid.NewRandom()
 			sessionID = u.String()
+			if err == http.ErrNoCookie {
+				http.SetCookie(w, &http.Cookie{
+					Name:   cookieSessionID,
+					Value:  sessionID,
+					MaxAge: cookieMaxAge,
+				})
+			} else if err != nil {
+				return
+			} else {
+				sessionID = c.Value
+			}
+		} else {
+			sessionID = "honeycomb-user-bees-20109"
 			http.SetCookie(w, &http.Cookie{
 				Name:   cookieSessionID,
 				Value:  sessionID,
 				MaxAge: cookieMaxAge,
 			})
-		} else if err != nil {
-			return
-		} else {
-			sessionID = c.Value
 		}
+
 		ctx := context.WithValue(r.Context(), ctxKeySessionID{}, sessionID)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)

@@ -4,27 +4,22 @@ const grpc = require('grpc');
 const { NodeTracerProvider } = require("@opentelemetry/node");
 const { SimpleSpanProcessor } = require("@opentelemetry/tracing");
 const { CollectorTraceExporter } = require("@opentelemetry/exporter-collector-grpc");
+const { GrpcInstrumentation } = require('@opentelemetry/instrumentation-grpc');
+const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const provider = new NodeTracerProvider({
-    plugins: {
-      grpc: {
-        enabled: true,
-        // You may use a package name or absolute path to the file.
-        path: '@opentelemetry/plugin-grpc',
-        // gRPC plugin options
-      }
-    }
-  });
+const { ResourceAttributes } = require('@opentelemetry/semantic-conventions');
+const { Resource } = require('@opentelemetry/resources');
+const provider = new NodeTracerProvider( {
+  resource: new Resource( {
+    [ResourceAttributes.SERVICE_NAME]: process.env.SERVICE_NAME,
+    [ 'ip' ]: process.env.POD_IP,
+  } )
+} );
 
-const metadata = new grpc.Metadata();
-metadata.set("x-honeycomb-team", process.env.HONEYCOMB_API_KEY);
-metadata.set("x-honeycomb-dataset", process.env.HONEYCOMB_DATASET);
+
 
 const collectorOptions = {
-	serviceName: process.env.SERVICE_NAME,
-	url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
-	credentials: grpc.credentials.createSsl(),
-	metadata
+	url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT
   };
 
 provider.addSpanProcessor(
@@ -34,7 +29,12 @@ provider.addSpanProcessor(
 );
 
 provider.register();
+
 registerInstrumentations({
-    tracerProvider: provider,
-  });
+  tracerProvider: provider,
+  instrumentations: [
+    new GrpcInstrumentation(),
+    new HttpInstrumentation()
+  ]
+});
 console.log("tracing initialized");

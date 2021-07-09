@@ -20,7 +20,7 @@ import (
 	"net"
 	"os"
 	"time"
-
+	"math/rand"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -30,13 +30,10 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/semconv"
 	tracebg "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/genproto"
@@ -75,27 +72,15 @@ type checkoutService struct {
 }
 
 func initOtelTracing(log logrus.FieldLogger) {
-	apikey := os.Getenv("HONEYCOMB_API_KEY")
-	dataset := os.Getenv("HONEYCOMB_DATASET")
 	otlpendpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if otlpendpoint == "" {
 		otlpendpoint = "api.honeycomb.io:443"
 	}
-	if apikey == "" {
-		log.Panicln("Honeycomb API key is required. Provide using the environment variable \"HONEYCOMB_API_KEY\".")
-	}
-	if dataset == "" {
-		dataset = "golang-otlp"
-	}
 	ctx := context.Background()
-	creds := credentials.NewClientTLSFromCert(nil, "")
+	//creds := credentials.NewClientTLSFromCert(nil, "")
 	driver := otlpgrpc.NewDriver(
-		otlpgrpc.WithTLSCredentials(creds),
-		otlpgrpc.WithEndpoint(otlpendpoint),
-		otlpgrpc.WithHeaders(map[string]string{
-			"x-honeycomb-team":    apikey,
-			"x-honeycomb-dataset": dataset,
-		}))
+		otlpgrpc.WithInsecure(),
+		otlpgrpc.WithEndpoint(otlpendpoint))
 	exporter, err := otlp.NewExporter(ctx, driver)
 	if err != nil {
 		log.Fatal(err)
@@ -105,10 +90,6 @@ func initOtelTracing(log logrus.FieldLogger) {
 	otel.SetTracerProvider(
 		trace.NewTracerProvider(
 			trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
-			trace.WithResource(resource.NewWithAttributes(
-				semconv.ServiceNameKey.String("checkout"),
-				semconv.ServiceVersionKey.String("0.1"),
-			)),
 		),
 	)
 }
@@ -176,16 +157,17 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	orderID, err := uuid.NewUUID()
 
 	var (
-		sessionIDKey = attribute.Key("sessionid")
 		orderIDKey   = attribute.Key("orderid")
+		userIDKey = attribute.Key("userid")
 	)
 
-	v := baggage.Value(ctx, sessionIDKey)
-	sessionID := v.AsString()
+	v := baggage.Value(ctx, userIDKey)
+	userID := v.AsString()
 
 	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
 	span := tracebg.SpanFromContext(ctx)
-	span.SetAttributes(sessionIDKey.String(sessionID), orderIDKey.String(orderID.String()))
+	span.SetAttributes(userIDKey.String(userID), orderIDKey.String(orderID.String()))
+	
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate order uuid")
@@ -240,6 +222,55 @@ type orderPrep struct {
 	cartItems             []*pb.CartItem
 	shippingCostLocalized *pb.Money
 }
+func mockDatabaseCall(ctx context.Context) {
+	tracer := otel.GetTracerProvider().Tracer("")
+	ctx, span := tracer.Start(ctx, "SQL SELECT")
+	var (
+		querykey = attribute.Key("db.query")
+	)
+	span.SetAttributes(querykey.String("select * from discounts where user = ?"))
+	defer span.End()
+	time.Sleep((time.Duration(1)) * time.Second)
+}
+func loadDiscountFromDatabase(ctx context.Context, u string) (string) {
+	currentTime := time.Now()
+	hour := currentTime.Hour()
+	minute := currentTime.Minute()
+	rnum := 0
+	if (hour == 0 || hour == 8 || hour == 16) {
+		if (minute >= 30 && minute <= 45) {
+			diff := minute - 30;
+			min := int(diff / 2 + 1)
+			max := int(diff + 2)
+			rnum = rand.Intn(max - min + 1) + min
+		}
+
+	}
+	for i:=1; i < rnum; i++ {
+		mockDatabaseCall(ctx)
+	}
+	
+	return "10"
+}
+
+
+func getDiscounts(ctx context.Context, u string)(string) {
+	tracer := otel.GetTracerProvider().Tracer("")
+	ctx, span := tracer.Start(ctx, "getDiscounts")
+	var (
+		userIDKey = attribute.Key("userid")
+	)
+	span.SetAttributes(userIDKey.String(u))
+	defer span.End()
+	if u == "honeycomb-user-bees-20109" {
+		return loadDiscountFromDatabase(ctx, u)
+	} else if (rand.Intn(100 - 1 + 1) < 15 ){
+		return loadDiscountFromDatabase(ctx, u)
+	} else {
+		return ""
+	}
+	
+}
 
 func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context.Context, userID, userCurrency string, address *pb.Address) (orderPrep, error) {
 	var out orderPrep
@@ -251,6 +282,13 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 	if err != nil {
 		return out, fmt.Errorf("failed to prepare order: %+v", err)
 	}
+
+	discount := getDiscounts(ctx, userID)
+	if discount != "" {
+		fmt.Sprintf("Got a discount: %v.", discount)
+	}
+
+
 	shippingUSD, err := cs.quoteShipping(ctx, address, cartItems)
 	if err != nil {
 		return out, fmt.Errorf("shipping quote failure: %+v", err)
@@ -288,6 +326,12 @@ func (cs *checkoutService) quoteShipping(ctx context.Context, address *pb.Addres
 }
 
 func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*pb.CartItem, error) {
+	var (
+		userIDKey = attribute.Key("userid")
+	)
+
+	span := tracebg.SpanFromContext(ctx)
+	span.SetAttributes(userIDKey.String(userID))
 	conn, err := grpc.DialContext(ctx, cs.cartSvcAddr, grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
