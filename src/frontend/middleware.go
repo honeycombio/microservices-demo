@@ -22,6 +22,8 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type ctxKeyLog struct{}
@@ -68,6 +70,10 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	
 
 	if v, ok := r.Context().Value(ctxKeySessionID{}).(string); ok {
+		cachesizeKey := attribute.Key("cachesize")
+		span := trace.SpanFromContext(ctx)
+		cachesize := requestcache.ItemCount()
+		span.SetAttributes(cachesizeKey.Int(cachesize))
 		requestcache.Set(requestID.String(), v, cache.NoExpiration)
 		log = log.WithField("session", v)
 	}

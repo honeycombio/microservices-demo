@@ -21,6 +21,7 @@ import (
 	"os"
 	"time"
 	"math/rand"
+	"math"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -34,6 +35,7 @@ import (
 	tracebg "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"strconv"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/genproto"
@@ -159,21 +161,26 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	var (
 		orderIDKey   = attribute.Key("orderid")
 		userIDKey = attribute.Key("userid")
+		cachesizeKey = attribute.Key("cachesize")
 	)
 
-	v := baggage.Value(ctx, userIDKey)
-	userID := v.AsString()
+	userID := baggage.Value(ctx, userIDKey).AsString()
+	cachesize, err := strconv.Atoi(baggage.Value(ctx, cachesizeKey).AsString())
+
 
 	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
 	span := tracebg.SpanFromContext(ctx)
-	span.SetAttributes(userIDKey.String(userID), orderIDKey.String(orderID.String()))
+
+    span.SetAttributes(cachesizeKey.Int(cachesize), userIDKey.String(userID), orderIDKey.String(orderID.String()))
+
+	
 	
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate order uuid")
 	}
 
-	prep, err := cs.prepareOrderItemsAndShippingQuoteFromCart(ctx, req.UserId, req.UserCurrency, req.Address)
+	prep, err := cs.prepareOrderItemsAndShippingQuoteFromCart(ctx, req.UserId, req.UserCurrency, req.Address, cachesize)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
@@ -222,7 +229,14 @@ type orderPrep struct {
 	cartItems             []*pb.CartItem
 	shippingCostLocalized *pb.Money
 }
-func mockDatabaseCall(ctx context.Context) {
+func getRandomData(max int, peak int) float32 {
+	num := float32(0);
+	for i := 0; i < peak; i++ {
+        num += rand.Float32() * float32(max/peak);
+    }    
+    return num;
+}
+func mockDatabaseCall(ctx context.Context, expectedtime int) {
 	tracer := otel.GetTracerProvider().Tracer("")
 	ctx, span := tracer.Start(ctx, "SQL SELECT")
 	var (
@@ -230,31 +244,24 @@ func mockDatabaseCall(ctx context.Context) {
 	)
 	span.SetAttributes(querykey.String("select * from discounts where user = ?"))
 	defer span.End()
-	time.Sleep((time.Duration(1)) * time.Second)
-}
-func loadDiscountFromDatabase(ctx context.Context, u string) (string) {
-	currentTime := time.Now()
-	hour := currentTime.Hour()
-	minute := currentTime.Minute()
-	rnum := 0
-	if (hour == 0 || hour == 8 || hour == 16) {
-		if (minute >= 30 && minute <= 45) {
-			diff := minute - 30;
-			min := int(diff / 2 + 1)
-			max := int(diff + 2)
-			rnum = rand.Intn(max - min + 1) + min
-		}
+	rnum := getRandomData(int(expectedtime), 4)
 
-	}
-	for i:=1; i < rnum; i++ {
-		mockDatabaseCall(ctx)
+	time.Sleep((time.Duration(rnum)) * time.Millisecond)
+}
+func loadDiscountFromDatabase(ctx context.Context, u string, cachesize int) (string) {
+
+	rnum := float64(cachesize / 2000)
+	expectedtime := math.Pow(rnum, 4) / 40 
+	numcalls := int(expectedtime / 200)
+	for i:=1; i < numcalls; i++ {
+		mockDatabaseCall(ctx, 1000)
 	}
 	
 	return "10"
 }
 
 
-func getDiscounts(ctx context.Context, u string)(string) {
+func getDiscounts(ctx context.Context, u string, cachesize int)(string) {
 	tracer := otel.GetTracerProvider().Tracer("")
 	ctx, span := tracer.Start(ctx, "getDiscounts")
 	var (
@@ -263,16 +270,16 @@ func getDiscounts(ctx context.Context, u string)(string) {
 	span.SetAttributes(userIDKey.String(u))
 	defer span.End()
 	if u == "honeycomb-user-bees-20109" {
-		return loadDiscountFromDatabase(ctx, u)
+		return loadDiscountFromDatabase(ctx, u, cachesize)
 	} else if (rand.Intn(100 - 1 + 1) < 15 ){
-		return loadDiscountFromDatabase(ctx, u)
+		return loadDiscountFromDatabase(ctx, u, cachesize)
 	} else {
 		return ""
 	}
 	
 }
 
-func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context.Context, userID, userCurrency string, address *pb.Address) (orderPrep, error) {
+func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context.Context, userID, userCurrency string, address *pb.Address, cachesize int) (orderPrep, error) {
 	var out orderPrep
 	cartItems, err := cs.getUserCart(ctx, userID)
 	if err != nil {
@@ -283,7 +290,7 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 		return out, fmt.Errorf("failed to prepare order: %+v", err)
 	}
 
-	discount := getDiscounts(ctx, userID)
+	discount := getDiscounts(ctx, userID, cachesize)
 	if discount != "" {
 		fmt.Sprintf("Got a discount: %v.", discount)
 	}
