@@ -254,7 +254,7 @@ func loadDiscountFromDatabase(ctx context.Context, u string, cachesize int) (str
 	expectedtime := math.Pow(rnum, 4) / 40 
 	numcalls := int(expectedtime / 200)
 	for i:=1; i < numcalls; i++ {
-		mockDatabaseCall(ctx, 1000)
+		mockDatabaseCall(ctx, 100)
 	}
 	
 	return "10"

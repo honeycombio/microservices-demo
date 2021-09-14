@@ -50,12 +50,12 @@ spec:
         #Bug in Nodejs picking up resource attributes https://github.com/open-telemetry/opentelemetry-js/issues/2259
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: service.name=payment,ip=$(POD_IP)
-        readinessProbe:
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:50051"]
-        livenessProbe:
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:50051"]
+        # readinessProbe:
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:50051"]
+        # livenessProbe:
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:50051"]
         resources:
           requests:
             cpu: 100m
