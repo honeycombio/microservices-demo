@@ -17,7 +17,9 @@ package main
 import (
 	"context"
 	"time"
-
+	"go.opentelemetry.io/otel/attribute"
+	// sdkTrace "go.opentelemetry.io/otel/sdk/trace"
+	apiTrace "go.opentelemetry.io/otel/trace"
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/frontend/genproto"
 
 	"github.com/pkg/errors"
@@ -99,10 +101,13 @@ func (fe *frontendServer) getShippingQuote(ctx context.Context, items []*pb.Cart
 func (fe *frontendServer) getRecommendations(ctx context.Context, userID string, productIDs []string) ([]*pb.Product, error) {
 	resp, err := pb.NewRecommendationServiceClient(fe.recommendationSvcConn).ListRecommendations(ctx,
 		&pb.ListRecommendationsRequest{UserId: userID, ProductIds: productIDs})
+	span := apiTrace.SpanFromContext(ctx)
+	len_products := len(resp.GetProductIds())
+	span.SetAttributes(attribute.Int("num_products", len_products))
 	if err != nil {
 		return nil, err
-	}
-	out := make([]*pb.Product, len(resp.GetProductIds()))
+	}	
+	out := make([]*pb.Product, len_products)
 	for i, v := range resp.GetProductIds() {
 		p, err := fe.getProduct(ctx, v)
 		if err != nil {
