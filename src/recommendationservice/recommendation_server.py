@@ -36,6 +36,7 @@ from opentelemetry.exporter.otlp.trace_exporter import OTLPSpanExporter
 import opentelemetry.instrumentation.grpc
 from opentelemetry.instrumentation.grpc import (
     GrpcInstrumentorServer,
+    GrpcInstrumentorClient,
     server_interceptor,
 )
 from opentelemetry.sdk.resources import Resource
@@ -48,27 +49,43 @@ logger = getJSONLogger('recommendationservice-server')
 worker_pool = futures.ThreadPoolExecutor(max_workers=10)
 class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
     def ListRecommendations(self, request, context):
-        tracer = trace.get_tracer(__name__)
-        with tracer.start_as_current_span("ListRecommendationsFunction"):
-            span = trace.get_current_span()
-            span.set_attribute("active_threads", len(worker_pool._threads))
-            span.set_attribute("pending_pool", worker_pool._work_queue.qsize())
-            max_responses = 5
-            # fetch list of products from product catalog stub
-            cat_response = product_catalog_stub.ListProducts(demo_pb2.Empty())
-            product_ids = [x.id for x in cat_response.products]
-            filtered_products = list(set(product_ids)-set(request.product_ids))
-            num_products = len(filtered_products)
-            num_return = min(max_responses, num_products)
-            # sample list of indicies to return
-            indices = random.sample(range(num_products), num_return)
-            # fetch product ids from indices
-            prod_list = [filtered_products[i] for i in indices]
-            logger.info("[Recv ListRecommendations] product_ids={}".format(prod_list))
-            # build and return response
-            response = demo_pb2.ListRecommendationsResponse()
-            response.product_ids.extend(prod_list)
-            return response
+        #tracer = trace.get_tracer(__name__)
+        # with tracer.start_as_current_span("ListRecommendationsFunction"):
+        #     span = trace.get_current_span()
+        #     span.set_attribute("active_threads", len(worker_pool._threads))
+        #     span.set_attribute("pending_pool", worker_pool._work_queue.qsize())
+        #     max_responses = 5
+        #     # fetch list of products from product catalog stub
+        #     cat_response = product_catalog_stub.ListProducts(demo_pb2.Empty())
+        #     product_ids = [x.id for x in cat_response.products]
+        #     filtered_products = list(set(product_ids)-set(request.product_ids))
+        #     num_products = len(filtered_products)
+        #     num_return = min(max_responses, num_products)
+        #     # sample list of indicies to return
+        #     indices = random.sample(range(num_products), num_return)
+        #     # fetch product ids from indices
+        #     prod_list = [filtered_products[i] for i in indices]
+        #     logger.info("[Recv ListRecommendations] product_ids={}".format(prod_list))
+        #     # build and return response
+        #     response = demo_pb2.ListRecommendationsResponse()
+        #     response.product_ids.extend(prod_list)
+        #     return response
+        max_responses = 5
+        # fetch list of products from product catalog stub
+        cat_response = product_catalog_stub.ListProducts(demo_pb2.Empty())
+        product_ids = [x.id for x in cat_response.products]
+        filtered_products = list(set(product_ids)-set(request.product_ids))
+        num_products = len(filtered_products)
+        num_return = min(max_responses, num_products)
+        # sample list of indicies to return
+        indices = random.sample(range(num_products), num_return)
+        # fetch product ids from indices
+        prod_list = [filtered_products[i] for i in indices]
+        logger.info("[Recv ListRecommendations] product_ids={}".format(prod_list))
+        # build and return response
+        response = demo_pb2.ListRecommendationsResponse()
+        response.product_ids.extend(prod_list)
+        return response
 
     def Check(self, request, context):
         return health_pb2.HealthCheckResponse(
@@ -82,18 +99,18 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
 if __name__ == "__main__":
     logger.info("initializing recommendationservice")
 
-    otlp_exporter = OTLPSpanExporter(
-	    endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
-        insecure=True
-    )
+    # otlp_exporter = OTLPSpanExporter(
+	#     endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
+    #     insecure=True
+    # )
   
 
-    trace.set_tracer_provider(TracerProvider(resource=Resource({"service.name": os.environ.get('SERVICE_NAME'), "service.version":"0.1", "ip": os.environ.get('POD_IP')})))
-    trace.get_tracer_provider().add_span_processor(
-        SimpleExportSpanProcessor(otlp_exporter)
-    )
+    # trace.set_tracer_provider(TracerProvider(resource=Resource({"service.name": os.environ.get('SERVICE_NAME'), "service.version":"0.1", "ip": os.environ.get('POD_IP')})))
+    # trace.get_tracer_provider().add_span_processor(
+    #     SimpleExportSpanProcessor(otlp_exporter)
+    # )
 
-
+    #instrumentor = GrpcInstrumentorClient().instrument()
     port = os.environ.get('PORT', "8080")
     catalog_addr = os.environ.get('PRODUCT_CATALOG_SERVICE_ADDR', '')
     if catalog_addr == "":
@@ -101,11 +118,12 @@ if __name__ == "__main__":
     logger.info("product catalog address: " + catalog_addr)
     channel = grpc.insecure_channel(catalog_addr)
     product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel)
-    interceptor = server_interceptor()
+    #interceptor = server_interceptor()
     # create gRPC server
 
-    server = grpc.server(worker_pool,
-                      interceptors=(interceptor,))
+    # server = grpc.server(worker_pool,
+    #                   interceptors=(interceptor,))
+    server = grpc.server(worker_pool)
 
     # add class to gRPC server
     service = RecommendationService()
