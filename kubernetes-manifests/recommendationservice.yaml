@@ -48,7 +48,7 @@ spec:
         - name: SERVICE_NAME
           value: recommendation
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: opentelemetry-collector:55680
+          value: opentelemetry-collector:4317
         - name: POD_IP
           valueFrom:
             fieldRef:

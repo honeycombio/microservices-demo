@@ -36,7 +36,7 @@ spec:
         - name: PORT
           value: "50051"
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: grpc://opentelemetry-collector:55680
+          value: grpc://opentelemetry-collector:4317
         - name: POD_IP
           valueFrom:
             fieldRef:

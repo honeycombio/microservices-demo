@@ -1,0 +1,19 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "Run the following command to restore dependencies to `vendor/` directory:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@opentelemetry/api": "^1.0.3",
+    "@opentelemetry/auto-instrumentations-web": "^0.25.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.25.0",
+    "@opentelemetry/resources": "^1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.0.0",
+    "zone.js": "^0.11.4"
+  }
+}

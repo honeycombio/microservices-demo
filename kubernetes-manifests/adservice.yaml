@@ -46,7 +46,7 @@ spec:
         - name: OTEL_METRICS_EXPORTER
           value: none
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: http://opentelemetry-collector:55680
+          value: http://opentelemetry-collector:4317
         - name: POD_IP
           valueFrom:
             fieldRef:
