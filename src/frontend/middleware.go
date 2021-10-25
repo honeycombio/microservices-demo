@@ -18,10 +18,13 @@ import (
 	"context"
 	"net/http"
 	"math/rand"
+	"strings"
 	"time"
 	"github.com/patrickmn/go-cache"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type ctxKeyLog struct{}
@@ -68,6 +71,10 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	
 
 	if v, ok := r.Context().Value(ctxKeySessionID{}).(string); ok {
+		cachesizeKey := attribute.Key("cachesize")
+		span := trace.SpanFromContext(ctx)
+		cachesize := requestcache.ItemCount()
+		span.SetAttributes(cachesizeKey.Int(cachesize))
 		requestcache.Set(requestID.String(), v, cache.NoExpiration)
 		log = log.WithField("session", v)
 	}
@@ -90,7 +97,8 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 		var min = 1
 		var max = 100
 		rnum := rand.Intn(max - min + 1) + min
-		if rnum <= PERCENTNORMAL && !(FORCEUSER == "1") {
+		userAgent := r.UserAgent()
+		if !strings.Contains(userAgent, "python") || (rnum <= PERCENTNORMAL && !(FORCEUSER == "1")) {
 			c, err := r.Cookie(cookieSessionID)
 			u, _ := uuid.NewRandom()
 			sessionID = u.String()

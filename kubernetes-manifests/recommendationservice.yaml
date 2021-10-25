@@ -32,14 +32,14 @@ spec:
         image: recommendationservice
         ports:
         - containerPort: 8080
-        readinessProbe:
-          periodSeconds: 5
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:8080"]
-        livenessProbe:
-          periodSeconds: 5
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:8080"]
+        # readinessProbe:
+        #   periodSeconds: 5
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:8080"]
+        # livenessProbe:
+        #   periodSeconds: 5
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:8080"]
         env:
         - name: PORT
           value: "8080"
@@ -48,7 +48,7 @@ spec:
         - name: SERVICE_NAME
           value: recommendation
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: opentelemetry-collector:55680
+          value: opentelemetry-collector:4317
         - name: POD_IP
           valueFrom:
             fieldRef:

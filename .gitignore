@@ -14,3 +14,6 @@ pkg/
 release/wi-kubernetes-manifests.yaml
 kubernetes-manifests/secrets.yaml
 secrets/
+node_modules/
+dist/
+.parcel-cache/

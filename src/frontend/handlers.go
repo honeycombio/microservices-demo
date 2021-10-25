@@ -44,6 +44,7 @@ var (
 	templates = template.Must(template.New("").
 			Funcs(template.FuncMap{
 			"renderMoney": renderMoney,
+			"renderUnits": renderUnits,
 		}).ParseGlob("templates/*.html"))
 	plat platformDetails
 )
@@ -313,10 +314,14 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 
 	var (
 		userIDKey = attribute.Key("userid")
+		cart_totalKey = attribute.Key("cart_total")
+		cachesizeKey = attribute.Key("cachesize")
 	)
-	ctx = baggage.ContextWithValues(ctx, userIDKey.String(s))
+	cachesize := requestcache.ItemCount()
+	ctx = baggage.ContextWithValues(ctx, userIDKey.String(s), cachesizeKey.String(strconv.Itoa(cachesize)))
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(userIDKey.String(s))
+	span.SetAttributes(userIDKey.String(s), cachesizeKey.Int(cachesize))
+
 
 	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
 		PlaceOrder(ctx, &pb.PlaceOrderRequest{
@@ -349,6 +354,10 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 		multPrice := money.MultiplySlow(*v.GetCost(), uint32(v.GetItem().GetQuantity()))
 		totalPaid = money.Must(money.Sum(totalPaid, multPrice))
 	}
+	totalpaid_float, err := strconv.ParseFloat(fmt.Sprintf("%d.%02d",totalPaid.GetUnits(), totalPaid.GetNanos()/10000000), 64)
+	span.SetAttributes(cart_totalKey.Float64(totalpaid_float))
+
+
 
 	currencies, err := fe.getCurrencies(r.Context())
 	if err != nil {
@@ -467,4 +476,8 @@ func cartSize(c []*pb.CartItem) int {
 
 func renderMoney(money pb.Money) string {
 	return fmt.Sprintf("%s %d.%02d", money.GetCurrencyCode(), money.GetUnits(), money.GetNanos()/10000000)
+}
+
+func renderUnits(money pb.Money) string {
+	return fmt.Sprintf("%d.%02d",money.GetUnits(), money.GetNanos()/10000000)
 }

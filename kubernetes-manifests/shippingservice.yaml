@@ -35,7 +35,7 @@ spec:
         - name: PORT
           value: "50051"
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: opentelemetry-collector:55680
+          value: opentelemetry-collector:4317
         - name: POD_IP
           valueFrom:
             fieldRef:
@@ -50,13 +50,13 @@ spec:
         #   value: "1"
         # - name: JAEGER_SERVICE_ADDR
         #   value: "jaeger-collector:14268"
-        readinessProbe:
-          periodSeconds: 5
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:50051"]
-        livenessProbe:
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:50051"]
+        # readinessProbe:
+        #   periodSeconds: 5
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:50051"]
+        # livenessProbe:
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:50051"]
         resources:
           requests:
             cpu: 100m

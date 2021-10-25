@@ -38,7 +38,7 @@ spec:
         - name: SERVICE_NAME
           value: cart
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: http://opentelemetry-collector:55680
+          value: http://opentelemetry-collector:4317
         - name: POD_IP
           valueFrom:
             fieldRef:
@@ -52,15 +52,15 @@ spec:
           limits:
             cpu: 300m
             memory: 128Mi
-        readinessProbe:
-          initialDelaySeconds: 15
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:7070", "-rpc-timeout=5s"]
-        livenessProbe:
-          initialDelaySeconds: 15
-          periodSeconds: 10
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:7070", "-rpc-timeout=5s"]
+        # readinessProbe:
+        #   initialDelaySeconds: 15
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:7070", "-rpc-timeout=5s"]
+        # livenessProbe:
+        #   initialDelaySeconds: 15
+        #   periodSeconds: 10
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:7070", "-rpc-timeout=5s"]
 ---
 apiVersion: v1
 kind: Service
