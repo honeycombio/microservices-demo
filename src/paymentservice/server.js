@@ -26,6 +26,17 @@ const logger = pino({
   useLevelLabels: true
 });
 
+function sleep(wait_time) {
+  // mock some work by sleeping
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, wait_time);
+  })
+}
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max) + 1;
+}
+
+
 class HipsterShopServer {
   constructor (protoRoot, port = HipsterShopServer.PORT) {
     this.port = port;
@@ -44,7 +55,8 @@ class HipsterShopServer {
    * @param {*} call  { ChargeRequest }
    * @param {*} callback  fn(err, ChargeResponse)
    */
-  static ChargeServiceHandler (call, callback) {
+   static async ChargeServiceHandler (call, callback) {
+    await sleep(getRandomInt(100));
     try {
       logger.info(`PaymentService#Charge invoked with request ${JSON.stringify(call.request)}`);
       const response = charge(call.request);

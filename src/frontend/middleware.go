@@ -19,12 +19,10 @@ import (
 	"net/http"
 	"math/rand"
 	"strings"
+	"strconv"
 	"time"
-	"github.com/patrickmn/go-cache"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type ctxKeyLog struct{}
@@ -70,12 +68,7 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 	
 
-	if v, ok := r.Context().Value(ctxKeySessionID{}).(string); ok {
-		cachesizeKey := attribute.Key("cachesize")
-		span := trace.SpanFromContext(ctx)
-		cachesize := requestcache.ItemCount()
-		span.SetAttributes(cachesizeKey.Int(cachesize))
-		requestcache.Set(requestID.String(), v, cache.NoExpiration)
+	if v, ok := r.Context().Value(ctxKeySessionID{}).(string); ok {		
 		log = log.WithField("session", v)
 	}
 	log.Debug("request started")
@@ -100,8 +93,9 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 		userAgent := r.UserAgent()
 		if !strings.Contains(userAgent, "python") || (rnum <= PERCENTNORMAL && !(FORCEUSER == "1")) {
 			c, err := r.Cookie(cookieSessionID)
-			u, _ := uuid.NewRandom()
-			sessionID = u.String()
+			//u, _ := uuid.NewRandom()
+			rsession := rand.Intn(100000 - 1000 + 1) + 1000
+			sessionID = strconv.Itoa(rsession)
 			if err == http.ErrNoCookie {
 				http.SetCookie(w, &http.Cookie{
 					Name:   cookieSessionID,
@@ -114,7 +108,7 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 				sessionID = c.Value
 			}
 		} else {
-			sessionID = "honeycomb-user-bees-20109"
+			sessionID = "20109"
 			http.SetCookie(w, &http.Cookie{
 				Name:   cookieSessionID,
 				Value:  sessionID,
