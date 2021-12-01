@@ -43,6 +43,10 @@ spec:
               fieldPath: status.podIP
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: service.name=productcatalog,ip=$(POD_IP)
+        - name: RAND_MIN
+          value: "10"
+        - name: RAND_MAX
+          value: "50"
         # - name: DISABLE_STATS
         #   value: "1"
         # - name: DISABLE_TRACING

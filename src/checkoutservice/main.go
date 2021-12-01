@@ -17,11 +17,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net"
-	"os"
-	"time"
-	"math/rand"
-	"math"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -35,8 +30,13 @@ import (
 	tracebg "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"strconv"
 	"google.golang.org/grpc/status"
+	"math"
+	"math/rand"
+	"net"
+	"os"
+	"strconv"
+	"time"
 
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/genproto"
 	money "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/money"
@@ -95,6 +95,21 @@ func initOtelTracing(log logrus.FieldLogger) {
 		),
 	)
 }
+
+func randWait() {
+	rand.Seed(time.Now().UnixNano())
+	min, err := strconv.Atoi(os.Getenv("RAND_MIN"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	max, err := strconv.Atoi(os.Getenv("RAND_MAX"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	rando := rand.Intn(max-min+1) + min
+	time.Sleep(time.Duration(rando) * time.Millisecond)
+}
+
 func main() {
 	if os.Getenv("DISABLE_TRACING") == "" {
 		log.Info("Tracing enabled.")
@@ -160,21 +175,17 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 
 	var (
 		orderIDKey   = attribute.Key("orderid")
-		userIDKey = attribute.Key("userid")
+		userIDKey    = attribute.Key("userid")
 		cachesizeKey = attribute.Key("cachesize")
 	)
 
 	userID := baggage.Value(ctx, userIDKey).AsString()
 	cachesize, err := strconv.Atoi(baggage.Value(ctx, cachesizeKey).AsString())
 
-
 	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
 	span := tracebg.SpanFromContext(ctx)
 
-    span.SetAttributes(cachesizeKey.Int(cachesize), userIDKey.String(userID), orderIDKey.String(orderID.String()))
-
-	
-	
+	span.SetAttributes(cachesizeKey.Int(cachesize), userIDKey.String(userID), orderIDKey.String(orderID.String()))
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate order uuid")
@@ -229,12 +240,13 @@ type orderPrep struct {
 	cartItems             []*pb.CartItem
 	shippingCostLocalized *pb.Money
 }
+
 func getRandomData(max int, peak int) float32 {
-	num := float32(0);
+	num := float32(0)
 	for i := 0; i < peak; i++ {
-        num += rand.Float32() * float32(max/peak);
-    }    
-    return num;
+		num += rand.Float32() * float32(max/peak)
+	}
+	return num
 }
 func mockDatabaseCall(ctx context.Context, expectedtime int) {
 	tracer := otel.GetTracerProvider().Tracer("")
@@ -248,20 +260,19 @@ func mockDatabaseCall(ctx context.Context, expectedtime int) {
 
 	time.Sleep((time.Duration(rnum)) * time.Millisecond)
 }
-func loadDiscountFromDatabase(ctx context.Context, u string, cachesize int) (string) {
+func loadDiscountFromDatabase(ctx context.Context, u string, cachesize int) string {
 
 	rnum := float64(cachesize / 2000)
-	expectedtime := math.Pow(rnum, 4) / 40 
+	expectedtime := math.Pow(rnum, 4) / 40
 	numcalls := int(expectedtime / 200)
-	for i:=1; i < numcalls; i++ {
+	for i := 1; i < numcalls; i++ {
 		mockDatabaseCall(ctx, 100)
 	}
-	
+
 	return "10"
 }
 
-
-func getDiscounts(ctx context.Context, u string, cachesize int)(string) {
+func getDiscounts(ctx context.Context, u string, cachesize int) string {
 	tracer := otel.GetTracerProvider().Tracer("")
 	ctx, span := tracer.Start(ctx, "getDiscounts")
 	var (
@@ -271,12 +282,12 @@ func getDiscounts(ctx context.Context, u string, cachesize int)(string) {
 	defer span.End()
 	if u == "honeycomb-user-bees-20109" {
 		return loadDiscountFromDatabase(ctx, u, cachesize)
-	} else if (rand.Intn(100 - 1 + 1) < 15 ){
+	} else if rand.Intn(100-1+1) < 15 {
 		return loadDiscountFromDatabase(ctx, u, cachesize)
 	} else {
 		return ""
 	}
-	
+
 }
 
 func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context.Context, userID, userCurrency string, address *pb.Address, cachesize int) (orderPrep, error) {
@@ -295,7 +306,6 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 		fmt.Sprintf("Got a discount: %v.", discount)
 	}
 
-
 	shippingUSD, err := cs.quoteShipping(ctx, address, cartItems)
 	if err != nil {
 		return out, fmt.Errorf("shipping quote failure: %+v", err)
@@ -308,6 +318,7 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 	out.shippingCostLocalized = shippingPrice
 	out.cartItems = cartItems
 	out.orderItems = orderItems
+	randWait()
 	return out, nil
 }
 
@@ -329,6 +340,7 @@ func (cs *checkoutService) quoteShipping(ctx context.Context, address *pb.Addres
 	if err != nil {
 		return nil, fmt.Errorf("failed to get shipping quote: %+v", err)
 	}
+	randWait()
 	return shippingQuote.GetCostUsd(), nil
 }
 
@@ -352,6 +364,7 @@ func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*p
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cart during checkout: %+v", err)
 	}
+	randWait()
 	return cart.GetItems(), nil
 }
 
@@ -368,6 +381,7 @@ func (cs *checkoutService) emptyUserCart(ctx context.Context, userID string) err
 	if _, err = pb.NewCartServiceClient(conn).EmptyCart(ctx, &pb.EmptyCartRequest{UserId: userID}); err != nil {
 		return fmt.Errorf("failed to empty user cart during checkout: %+v", err)
 	}
+	randWait()
 	return nil
 }
 
@@ -397,6 +411,7 @@ func (cs *checkoutService) prepOrderItems(ctx context.Context, items []*pb.CartI
 			Item: item,
 			Cost: price}
 	}
+	randWait()
 	return out, nil
 }
 
@@ -415,6 +430,7 @@ func (cs *checkoutService) convertCurrency(ctx context.Context, from *pb.Money, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert currency: %+v", err)
 	}
+	randWait()
 	return result, err
 }
 
@@ -434,6 +450,7 @@ func (cs *checkoutService) chargeCard(ctx context.Context, amount *pb.Money, pay
 	if err != nil {
 		return "", fmt.Errorf("could not charge the card: %+v", err)
 	}
+	randWait()
 	return paymentResp.GetTransactionId(), nil
 }
 
@@ -448,6 +465,7 @@ func (cs *checkoutService) sendOrderConfirmation(ctx context.Context, email stri
 	_, err = pb.NewEmailServiceClient(conn).SendOrderConfirmation(ctx, &pb.SendOrderConfirmationRequest{
 		Email: email,
 		Order: order})
+	randWait()
 	return err
 }
 
@@ -467,6 +485,7 @@ func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, i
 	if err != nil {
 		return "", fmt.Errorf("shipment failed: %+v", err)
 	}
+	randWait()
 	return resp.GetTrackingId(), nil
 }
 

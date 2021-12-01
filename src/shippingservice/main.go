@@ -16,8 +16,10 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -42,6 +44,20 @@ const (
 )
 
 var log *logrus.Logger
+
+func randWait() {
+	rand.Seed(time.Now().UnixNano())
+	min, err := strconv.Atoi(os.Getenv("RAND_MIN"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	max, err := strconv.Atoi(os.Getenv("RAND_MAX"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	rando := rand.Intn(max-min+1) + min
+	time.Sleep(time.Duration(rando) * time.Millisecond)
+}
 
 func init() {
 	log = logrus.New()
@@ -142,6 +158,7 @@ func (s *server) GetQuote(ctx context.Context, in *pb.GetQuoteRequest) (*pb.GetQ
 	// 2. Generate a quote based on the total number of items to be shipped.
 	quote := CreateQuoteFromCount(count)
 
+	randWait()
 	// 3. Generate a response.
 	return &pb.GetQuoteResponse{
 		CostUsd: &pb.Money{
@@ -160,7 +177,7 @@ func (s *server) ShipOrder(ctx context.Context, in *pb.ShipOrderRequest) (*pb.Sh
 	// 1. Create a Tracking ID
 	baseAddress := fmt.Sprintf("%s, %s, %s", in.Address.StreetAddress, in.Address.City, in.Address.State)
 	id := CreateTrackingId(baseAddress)
-
+	randWait()
 	// 2. Generate a response.
 	return &pb.ShipOrderResponse{
 		TrackingId: id,

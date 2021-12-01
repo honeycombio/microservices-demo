@@ -17,12 +17,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"os"
-	"time"
-	"strconv"
-	"github.com/patrickmn/go-cache"
 	"github.com/gorilla/mux"
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	middleware "go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
@@ -33,12 +29,16 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
 )
 
 const (
 	port            = "8080"
 	defaultCurrency = "USD"
-	cookieMaxAge    = 5//60 * 60 * 48
+	cookieMaxAge    = 5 //60 * 60 * 48
 
 	cookiePrefix    = "shop_"
 	cookieSessionID = cookiePrefix + "session-id"
@@ -80,8 +80,10 @@ type frontendServer struct {
 	adSvcAddr string
 	adSvcConn *grpc.ClientConn
 }
+
 var FORCEUSER = "0"
 var PERCENTNORMAL = 100
+
 func main() {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 	log := logrus.New()
@@ -158,7 +160,6 @@ func main() {
 	log.Infof("starting server on " + addr + ":" + srvPort)
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
 }
-
 
 func initOtelTracing(log logrus.FieldLogger) {
 	otlpendpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
