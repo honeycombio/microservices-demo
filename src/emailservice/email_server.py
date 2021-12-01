@@ -44,6 +44,8 @@ from opentelemetry.sdk.trace.export import SimpleExportSpanProcessor
 
 # import googleclouddebugger
 # import googlecloudprofiler
+from random import randint
+from time import sleep
 
 from logger import getJSONLogger
 logger = getJSONLogger('emailservice-server')
@@ -75,6 +77,8 @@ class EmailService(BaseEmailService):
 
   @staticmethod
   def send_email(client, email_address, content):
+    sleep(randint(10,250)/1000)
+
     response = client.send_message(
       sender = client.sender_path(project_id, region, sender_id),
       envelope_from_authority = '',
@@ -94,6 +98,8 @@ class EmailService(BaseEmailService):
     logger.info("Message sent: {}".format(response.rfc822_message_id))
 
   def SendOrderConfirmation(self, request, context):
+    sleep(randint(10,250)/1000)
+
     email = request.email
     order = request.order
 
@@ -117,6 +123,8 @@ class EmailService(BaseEmailService):
 
 class DummyEmailService(BaseEmailService):
   def SendOrderConfirmation(self, request, context):
+    sleep(randint(10,250)/1000)
+
     logger.info('A request to send order confirmation email to {} has been received.'.format(request.email))
     return demo_pb2.Empty()
 
