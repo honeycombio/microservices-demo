@@ -22,7 +22,6 @@ import (
 	"time"
 	"strconv"
 	"github.com/gorilla/mux"
-	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	middleware "go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
@@ -33,7 +32,6 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
-	"net/http"
 )
 
 const (
