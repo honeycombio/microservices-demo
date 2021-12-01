@@ -17,7 +17,8 @@ import grpc
 
 import demo_pb2 as demo__pb2
 
-
+from random import randint
+from time import sleep
 class CartServiceStub(object):
   """-----------------Cart service-----------------
 
@@ -174,6 +175,8 @@ class ProductCatalogServiceServicer(object):
   """
 
   def ListProducts(self, request, context):
+    sleep(randint(10,250)/1000)
+
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)

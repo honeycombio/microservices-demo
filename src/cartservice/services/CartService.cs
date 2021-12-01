@@ -18,6 +18,7 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using cartservice.cartstore;
 using Hipstershop;
+using System.Threading;
 
 namespace cartservice.services
 {
@@ -33,19 +34,29 @@ namespace cartservice.services
 
         public async override Task<Empty> AddItem(AddItemRequest request, ServerCallContext context)
         {
+            CartService.SleepForSomeTime();
             await _cartStore.AddItemAsync(request.UserId, request.Item.ProductId, request.Item.Quantity);
             return Empty;
         }
 
         public override Task<Cart> GetCart(GetCartRequest request, ServerCallContext context)
         {
+            CartService.SleepForSomeTime();
             return _cartStore.GetCartAsync(request.UserId);
         }
 
         public async override Task<Empty> EmptyCart(EmptyCartRequest request, ServerCallContext context)
         {
+            CartService.SleepForSomeTime();
             await _cartStore.EmptyCartAsync(request.UserId);
             return Empty;
+        }
+
+        public static void SleepForSomeTime()
+        {
+            Random rnd = new Random();
+            int sleepWaitMilliSeconds = rnd.Next(25, 250);
+            Thread.Sleep(sleepWaitMilliSeconds);
         }
     }
 }
