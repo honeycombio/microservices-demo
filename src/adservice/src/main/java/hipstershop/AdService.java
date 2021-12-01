@@ -39,10 +39,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import java.math.*;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 
 public final class AdService {
 
@@ -80,6 +82,10 @@ public final class AdService {
                 }));
     healthMgr.setStatus("", ServingStatus.SERVING);
   }
+  private static long random_int(int Min, int Max)
+  {
+      return (long) (Math.random()*(Max-Min))+Min;
+  }
 
   private void stop() {
     if (server != null) {
@@ -101,9 +107,13 @@ public final class AdService {
     @WithSpan
     public void getAds(AdRequest req, StreamObserver<AdResponse> responseObserver) {
       AdService service = AdService.getInstance();
+
+      
       Span span = Span.current();
       try {
         span.setAttribute("method", "getAds");
+        //wait 50 to 200ms;
+        Thread.sleep(AdService.random_int(50, 200)); // For example
         List<Ad> allAds = new ArrayList<>();
         logger.info("received ad request (context_words=" + req.getContextKeysList() + ")");
         long keycount =req.getContextKeysCount();
@@ -131,6 +141,8 @@ public final class AdService {
         responseObserver.onCompleted();
       } catch (StatusRuntimeException e) {
         logger.log(Level.WARN, "GetAds Failed with status {}", e.getStatus());
+        responseObserver.onError(e);
+      } catch (InterruptedException e) {
         responseObserver.onError(e);
       }
     }
