@@ -22,6 +22,7 @@ import (
 	"time"
 	"math/rand"
 	"math"
+	"github.com/patrickmn/go-cache"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -35,7 +36,6 @@ import (
 	tracebg "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"strconv"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/genproto"
@@ -48,6 +48,7 @@ const (
 	usdCurrency = "USD"
 )
 
+var requestcache = cache.New(5*time.Minute, 10*time.Minute)
 var log *logrus.Logger
 
 func init() {
@@ -161,11 +162,14 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	var (
 		orderIDKey   = attribute.Key("orderid")
 		userIDKey = attribute.Key("userid")
+		requestIDKey = attribute.Key("requestID")
 		cachesizeKey = attribute.Key("cachesize")
 	)
 
 	userID := baggage.Value(ctx, userIDKey).AsString()
-	cachesize, err := strconv.Atoi(baggage.Value(ctx, cachesizeKey).AsString())
+	cachesize := requestcache.ItemCount()
+	requestID := baggage.Value(ctx, requestIDKey).AsString()
+	requestcache.Set(requestID, userID, cache.NoExpiration)
 
 
 	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))

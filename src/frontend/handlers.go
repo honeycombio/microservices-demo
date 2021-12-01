@@ -311,16 +311,19 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 
 
 	ctx := r.Context()
-
+	r.Context()
+	reqIDRaw := ctx.Value(ctxKeyRequestID{}) // reqIDRaw at this point is of type 'interface{}'
+		
+	reqID := reqIDRaw.(string)
 	var (
 		userIDKey = attribute.Key("userid")
 		cart_totalKey = attribute.Key("cart_total")
-		cachesizeKey = attribute.Key("cachesize")
+		requestIDKey = attribute.Key("requestID")
 	)
-	cachesize := requestcache.ItemCount()
-	ctx = baggage.ContextWithValues(ctx, userIDKey.String(s), cachesizeKey.String(strconv.Itoa(cachesize)))
+	
+	ctx = baggage.ContextWithValues(ctx, userIDKey.String(s), requestIDKey.String(reqID))
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(userIDKey.String(s), cachesizeKey.Int(cachesize))
+	span.SetAttributes(userIDKey.String(s), requestIDKey.String(reqID))
 
 
 	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
