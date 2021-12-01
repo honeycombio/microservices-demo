@@ -37,7 +37,7 @@ import (
 const (
 	port            = "8080"
 	defaultCurrency = "USD"
-	cookieMaxAge    = 5//60 * 60 * 48
+	cookieMaxAge    = 5 //60 * 60 * 48
 
 	cookiePrefix    = "shop_"
 	cookieSessionID = cookiePrefix + "session-id"
@@ -79,8 +79,10 @@ type frontendServer struct {
 	adSvcAddr string
 	adSvcConn *grpc.ClientConn
 }
+
 var FORCEUSER = "0"
 var PERCENTNORMAL = 100
+
 func main() {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 	log := logrus.New()
@@ -157,7 +159,6 @@ func main() {
 	log.Infof("starting server on " + addr + ":" + srvPort)
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
 }
-
 
 func initOtelTracing(log logrus.FieldLogger) {
 	otlpendpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")

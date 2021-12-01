@@ -20,9 +20,11 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -55,6 +57,20 @@ var (
 
 	reloadCatalog bool
 )
+
+func randWait() {
+	rand.Seed(time.Now().UnixNano())
+	min, err := strconv.Atoi(os.Getenv("RAND_MIN"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	max, err := strconv.Atoi(os.Getenv("RAND_MAX"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	rando := rand.Intn(max-min+1) + min
+	time.Sleep(time.Duration(rando) * time.Millisecond)
+}
 
 func init() {
 	log = logrus.New()
@@ -178,6 +194,7 @@ func readCatalogFile(catalog *pb.ListProductsResponse) error {
 		return err
 	}
 	log.Info("successfully parsed product catalog json")
+	randWait()
 	return nil
 }
 
