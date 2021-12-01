@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-
+function sleep(wait_time) {
+  // mock some work by sleeping
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, wait_time);
+  })
+}
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max) + 1;
+}
 
 
 const path = require('path');
@@ -77,7 +85,8 @@ function _carry (amount) {
 /**
  * Lists the supported currencies
  */
-function getSupportedCurrencies (call, callback) {
+async function getSupportedCurrencies (call, callback) {
+  await sleep(getRandomInt(100));
   logger.info('Getting supported currencies...');
   _getCurrencyData((data) => {
     callback(null, {currency_codes: Object.keys(data)});
@@ -87,7 +96,8 @@ function getSupportedCurrencies (call, callback) {
 /**
  * Converts between currencies
  */
-function convert (call, callback) {
+async function convert (call, callback) {
+  await sleep(getRandomInt(100));
   logger.info('received conversion request');
   try {
     _getCurrencyData((data) => {
