@@ -17,12 +17,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"net"
-	"os"
-	"time"
-	"math/rand"
-	"math"
+	pb "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/genproto"
+	money "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/money"
 	"github.com/google/uuid"
+	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -35,12 +33,14 @@ import (
 	tracebg "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"strconv"
-	"github.com/patrickmn/go-cache"
-	pb "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/genproto"
-	money "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/money"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/status"
+	"math"
+	"math/rand"
+	"net"
+	"os"
+	"strconv"
+	"time"
 )
 
 const (
@@ -50,6 +50,13 @@ const (
 
 var requestcache = cache.New(5*time.Minute, 10*time.Minute)
 var log *logrus.Logger
+
+type OrderCache struct {
+	OrderId   string
+	UserId    string
+	RequestId string
+	Currency  string
+}
 
 func init() {
 	log = logrus.New()
@@ -176,7 +183,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 
 	var (
 		orderIDKey   = attribute.Key("orderid")
-		userIDKey = attribute.Key("userid")
+		userIDKey    = attribute.Key("userid")
 		requestIDKey = attribute.Key("requestID")
 		cachesizeKey = attribute.Key("cachesize")
 	)
@@ -184,7 +191,14 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	userID := baggage.Value(ctx, userIDKey).AsString()
 	cachesize := requestcache.ItemCount()
 	requestID := baggage.Value(ctx, requestIDKey).AsString()
-	requestcache.Set(requestID, userID, cache.NoExpiration)
+
+	ordCache := &OrderCache{
+		OrderId:   orderID.String(),
+		UserId:    userID,
+		RequestId: requestID,
+		Currency:  req.UserCurrency,
+	}
+	requestcache.Set(requestID, ordCache, cache.NoExpiration)
 
 	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
 	span := tracebg.SpanFromContext(ctx)
@@ -252,6 +266,7 @@ func getRandomData(max int, peak int) float32 {
 	}
 	return num
 }
+
 func mockDatabaseCall(ctx context.Context, expectedtime int) {
 	tracer := otel.GetTracerProvider().Tracer("")
 	ctx, span := tracer.Start(ctx, "SQL SELECT")
@@ -264,9 +279,10 @@ func mockDatabaseCall(ctx context.Context, expectedtime int) {
 
 	time.Sleep((time.Duration(rnum)) * time.Millisecond)
 }
+
 func loadDiscountFromDatabase(ctx context.Context, u string, cachesize int) string {
 
-	rnum := float64(cachesize / 2000)
+	rnum := float64(cachesize / 500)
 	expectedtime := math.Pow(rnum, 4) / 40
 	numcalls := int(expectedtime / 200)
 	for i := 1; i < numcalls; i++ {
