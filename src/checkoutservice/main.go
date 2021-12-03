@@ -189,7 +189,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	)
 
 	userID := baggage.Value(ctx, userIDKey).AsString()
-	cachesize := requestcache.ItemCount()
+
 	requestID := baggage.Value(ctx, requestIDKey).AsString()
 
 	ordCache := &OrderCache{
@@ -198,7 +198,12 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		RequestId: requestID,
 		Currency:  req.UserCurrency,
 	}
-	requestcache.Set(requestID, ordCache, cache.NoExpiration)
+
+	//Okay we need to fake some problems some how...
+	for i := 0; i < 10; i++ {
+		requestcache.Set(requestID+strconv.Itoa(i), ordCache, cache.NoExpiration)
+	}
+	cachesize := requestcache.ItemCount()
 
 	ctx = baggage.ContextWithValues(ctx, orderIDKey.String(orderID.String()))
 	span := tracebg.SpanFromContext(ctx)
@@ -282,7 +287,7 @@ func mockDatabaseCall(ctx context.Context, expectedtime int) {
 
 func loadDiscountFromDatabase(ctx context.Context, u string, cachesize int) string {
 
-	rnum := float64(cachesize / 500)
+	rnum := float64(cachesize / 5000)
 	expectedtime := math.Pow(rnum, 4) / 40
 	numcalls := int(expectedtime / 200)
 	for i := 1; i < numcalls; i++ {
