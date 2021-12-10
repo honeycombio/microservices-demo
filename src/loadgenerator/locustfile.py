@@ -75,7 +75,7 @@ class UserBehavior(TaskSet):
         browseProduct: 10,
         addToCart: 2,
         viewCart: 3,
-        checkout: 1}
+        checkout: 5}
 
 class WebsiteUser(HttpUser):
     tasks = [UserBehavior]
