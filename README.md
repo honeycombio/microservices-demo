@@ -1,4 +1,6 @@
-<img src="src/frontend/static/icons/Hipster_HeroLogoCyan.svg" width="300" alt="Online Boutique" style="display: block; margin-left: auto; margin-right: auto; width: 50%" />
+<p align="center">
+<img src="src/frontend/static/icons/Hipster_HeroLogoCyan.svg" width="300" alt="Online Boutique" />
+</p>
 
 
 **[Online Boutique](https://microservices.demo.honeycomb.io)** is a cloud-native microservices demo application.
