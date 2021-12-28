@@ -43,10 +43,6 @@ spec:
               fieldPath: status.podIP
         - name: SERVICE_NAME
           value: payment
-        - name: POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
         #Bug in Nodejs picking up resource attributes https://github.com/open-telemetry/opentelemetry-js/issues/2259
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: service.name=payment,ip=$(POD_IP)
