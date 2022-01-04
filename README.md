@@ -141,7 +141,6 @@ Find **Protocol Buffers Descriptions** at the [`./pb` directory](./pb).
   The app is designed to run on Kubernetes
 - **[gRPC](https://grpc.io):** Microservices use a high volume of gRPC calls to
   communicate to each other.
-- **[Istio](https://istio.io):** Application works on Istio service mesh.
 - **[OpenTelemetry](https://opentelemetry.io/) Tracing:** Most services are
   instrumented using OpenTelemetry trace providers for gRPC/HTTP.
 - **[Skaffold](https://skaffold.dev):** Application
