@@ -17,10 +17,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"os"
-	"time"
-	"strconv"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -32,6 +28,10 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
 )
 
 const (
@@ -52,7 +52,6 @@ var (
 		"JPY": true,
 		"GBP": true,
 		"TRY": true}
-	
 )
 
 type ctxKeySessionID struct{}
@@ -81,10 +80,11 @@ type frontendServer struct {
 }
 
 var FORCEUSER = "0"
-var PERCENTNORMAL = 100
+var PERCENTNORMAL = 99
 
 func main() {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+
 	log := logrus.New()
 	log.Level = logrus.DebugLevel
 	log.Formatter = &logrus.JSONFormatter{
@@ -96,18 +96,17 @@ func main() {
 		TimestampFormat: time.RFC3339Nano,
 	}
 	log.Out = os.Stdout
+
 	FORCEUSER = os.Getenv("FORCE_USER")
-	p_i, converterror := strconv.Atoi(os.Getenv("PERCENT_NORMAL"))
-	if converterror != nil {
-		PERCENTNORMAL = 100
-	} else {
-		PERCENTNORMAL = p_i
+
+	p, err := strconv.Atoi(os.Getenv("PERCENT_NORMAL"))
+	if err == nil {
+		PERCENTNORMAL = p
 	}
+
 	if os.Getenv("DISABLE_TRACING") == "" {
 		log.Info("Tracing enabled.")
-		//go initTracing(log)
 		go initOtelTracing(log)
-
 	} else {
 		log.Info("Tracing disabled.")
 	}
@@ -116,7 +115,9 @@ func main() {
 	if os.Getenv("PORT") != "" {
 		srvPort = os.Getenv("PORT")
 	}
+
 	addr := os.Getenv("LISTEN_ADDR")
+
 	svc := new(frontendServer)
 	mustMapEnv(&svc.productCatalogSvcAddr, "PRODUCT_CATALOG_SERVICE_ADDR")
 	mustMapEnv(&svc.currencySvcAddr, "CURRENCY_SERVICE_ADDR")
@@ -149,38 +150,43 @@ func main() {
 	r.HandleFunc("/robots.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "User-agent: *\nDisallow: /") })
 	r.HandleFunc("/_healthz", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "ok") })
 	r.Use(middleware.Middleware("frontend"))
+
 	var handler http.Handler = r
 	handler = &logHandler{log: log, next: handler} // add logging
 	handler = ensureSessionID(handler)             // add session ID
-	// handler = &ochttp.Handler{                     // add opencensus instrumentation
-	// 	Handler:     handler,
-	// 	Propagation: &b3.HTTPFormat{}}
 
 	log.Infof("starting server on " + addr + ":" + srvPort)
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
 }
 
 func initOtelTracing(log logrus.FieldLogger) {
-	otlpendpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-	if otlpendpoint == "" {
-		otlpendpoint = "api.honeycomb.io:443"
+	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if endpoint == "" {
+		endpoint = "api.honeycomb.io:443"
 	}
+
 	ctx := context.Background()
-	//creds := credentials.NewClientTLSFromCert(nil, "")
+
+	// Create an OTLP driver using an insecure connection to an OpenTelemetry Collector
 	driver := otlpgrpc.NewDriver(
 		otlpgrpc.WithInsecure(),
-		otlpgrpc.WithEndpoint(otlpendpoint))
+		otlpgrpc.WithEndpoint(endpoint))
+
+	// Create an OTLP exporter with the driver
 	exporter, err := otlp.NewExporter(ctx, driver)
 	if err != nil {
 		log.Fatal(err)
 	}
-	propagator := propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{})
-	otel.SetTextMapPropagator(propagator)
+
+	// Set the TraceProvider
 	otel.SetTracerProvider(
 		trace.NewTracerProvider(
 			trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
 		),
 	)
+
+	// Specify the TextMapPropagator to ensure spans propagate across service boundaries
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}))
 }
 
 func mustMapEnv(target *string, envKey string) {
