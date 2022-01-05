@@ -16,6 +16,12 @@ package main
 
 import (
 	"fmt"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"math/rand"
 	"net"
 	"os"
@@ -27,10 +33,6 @@ import (
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/shippingservice/genproto"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/trace"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -72,30 +74,51 @@ func init() {
 	}
 	log.Out = os.Stdout
 }
-func initOtelTracing(log logrus.FieldLogger) {
-	otlpendpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-	if otlpendpoint == "" {
-		otlpendpoint = "api.honeycomb.io:443"
+
+func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.TracerProvider {
+	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if endpoint == "" {
+		endpoint = "opentelemetry-collector:4317"
 	}
-	ctx := context.Background()
-	//creds := credentials.NewClientTLSFromCert(nil, "")
-	driver := otlpgrpc.NewDriver(
-		otlpgrpc.WithInsecure(),
-		otlpgrpc.WithEndpoint(otlpendpoint))
-	exporter, err := otlp.NewExporter(ctx, driver)
+
+	// Set GRPC options to establish an insecure connection to an OpenTelemetry Collector
+	// To establish a TLS connection to a secured endpoint use:
+	//   otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, ""))
+	opts := []otlptracegrpc.Option{
+		otlptracegrpc.WithEndpoint(endpoint),
+		otlptracegrpc.WithInsecure(),
+	}
+
+	// Create the exporter
+	exporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(opts...))
 	if err != nil {
 		log.Fatal(err)
 	}
-	propagator := propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{})
-	otel.SetTextMapPropagator(propagator)
-	otel.SetTracerProvider(
-		trace.NewTracerProvider(
-			trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
-		),
+
+	// Specify the TextMapPropagator to ensure spans propagate across service boundaries
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}))
+
+	// Set standard attributes per semantic conventions
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String("shipping"),
 	)
+
+	// Create and set the TraceProvider
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(res),
+	)
+	otel.SetTracerProvider(tp)
+
+	return tp
 }
+
 func main() {
-	go initOtelTracing(log)
+	// Initialize Tracing
+	ctx := context.Background()
+	tp := initOtelTracing(ctx, log)
+	defer func() { _ = tp.Shutdown(ctx) }()
 
 	port := defaultPort
 	if value, ok := os.LookupEnv("PORT"); ok {

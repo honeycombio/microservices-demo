@@ -41,7 +41,7 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         - name: OTEL_RESOURCE_ATTRIBUTES
-          value: service.name=shipping,ip=$(POD_IP)
+          value: ip=$(POD_IP)
         - name: RAND_MIN
           value: "10"
         - name: RAND_MAX
