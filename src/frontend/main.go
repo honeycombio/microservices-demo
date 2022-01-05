@@ -81,7 +81,6 @@ type frontendServer struct {
 	adSvcConn *grpc.ClientConn
 }
 
-var FORCEUSER = "0"
 var PERCENTNORMAL = 75
 
 func main() {
@@ -104,8 +103,6 @@ func main() {
 	// Initialize Tracing
 	tp := initOtelTracing(ctx, log)
 	defer func() { _ = tp.Shutdown(ctx) }()
-
-	FORCEUSER = os.Getenv("FORCE_USER")
 
 	p, err := strconv.Atoi(os.Getenv("PERCENT_NORMAL"))
 	if err == nil {
@@ -148,8 +145,8 @@ func main() {
 	r.HandleFunc("/cart/checkout", svc.placeOrderHandler).Methods(http.MethodPost)
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 	r.PathPrefix("/dist/").Handler(http.StripPrefix("/dist/", http.FileServer(http.Dir("./dist/"))))
-	r.HandleFunc("/robots.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "User-agent: *\nDisallow: /") })
-	r.HandleFunc("/_healthz", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "ok") })
+	r.HandleFunc("/robots.txt", func(w http.ResponseWriter, _ *http.Request) { _, _ = fmt.Fprint(w, "User-agent: *\nDisallow: /") })
+	r.HandleFunc("/_healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = fmt.Fprint(w, "ok") })
 	r.Use(middleware.Middleware("frontend"))
 
 	var handler http.Handler = r
