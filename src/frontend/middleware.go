@@ -16,13 +16,13 @@ package main
 
 import (
 	"context"
-	"net/http"
-	"math/rand"
-	"strings"
-	"strconv"
-	"time"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"math/rand"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type ctxKeyLog struct{}
@@ -66,9 +66,8 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"http.req.method": r.Method,
 		"http.req.id":     requestID.String(),
 	})
-	
 
-	if v, ok := r.Context().Value(ctxKeySessionID{}).(string); ok {		
+	if v, ok := r.Context().Value(ctxKeySessionID{}).(string); ok {
 		log = log.WithField("session", v)
 	}
 	log.Debug("request started")
@@ -85,17 +84,23 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func ensureSessionID(next http.Handler) http.HandlerFunc {
+	// adds a sessionID to the session.
+	// For the most part (PERCENTNORMAL) the sessionID will be a sparse but random-looking set of IDs
+	// For all other circumstances a specific sessionID of "20109" will be used
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		var sessionID string
-		var min = 1
-		var max = 100
-		rnum := rand.Intn(max - min + 1) + min
+		rnum := rand.Intn(100) + 1
 		userAgent := r.UserAgent()
+
+		// If the request did not originate from the load generator (useragent contains python)
+		// OR the random number is within percent normal and FORCEUSER is not 1
 		if !strings.Contains(userAgent, "python") || (rnum <= PERCENTNORMAL && !(FORCEUSER == "1")) {
-			c, err := r.Cookie(cookieSessionID)
-			//u, _ := uuid.NewRandom()
-			rsession := rand.Intn(100000 - 1000 + 1) + 1000
+			// generate a sparse but random-looking set of session IDs
+			rsession := 7 + rand.Intn(50) + (rand.Intn(50) * 100) + (rand.Intn(50) * 10000)
 			sessionID = strconv.Itoa(rsession)
+
+			c, err := r.Cookie(cookieSessionID)
 			if err == http.ErrNoCookie {
 				http.SetCookie(w, &http.Cookie{
 					Name:   cookieSessionID,
@@ -107,7 +112,9 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 			} else {
 				sessionID = c.Value
 			}
+
 		} else {
+			// Use the static sessionID "20109"
 			sessionID = "20109"
 			http.SetCookie(w, &http.Cookie{
 				Name:   cookieSessionID,
