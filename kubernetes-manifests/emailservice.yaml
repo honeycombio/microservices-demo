@@ -35,16 +35,12 @@ spec:
         env:
         - name: PORT
           value: "8080"
-        # - name: DISABLE_TRACING
-        #   value: "1"
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: opentelemetry-collector:4317
         - name: POD_IP
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        - name: DISABLE_PROFILER
-          value: "1"
         # readinessProbe:
         #   periodSeconds: 5
         #   exec:

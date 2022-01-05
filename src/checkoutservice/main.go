@@ -119,12 +119,8 @@ func randWait() {
 }
 
 func main() {
-	if os.Getenv("DISABLE_TRACING") == "" {
-		log.Info("Tracing enabled.")
-		go initOtelTracing(log)
-	} else {
-		log.Info("Tracing disabled.")
-	}
+
+	go initOtelTracing(log)
 
 	port := listenPort
 	if os.Getenv("PORT") != "" {

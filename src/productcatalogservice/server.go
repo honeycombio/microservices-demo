@@ -114,12 +114,7 @@ func initOtelTracing(log logrus.FieldLogger) {
 }
 
 func main() {
-	if os.Getenv("DISABLE_TRACING") == "" {
-		log.Info("Tracing enabled.")
-		go initOtelTracing(log)
-	} else {
-		log.Info("Tracing disabled.")
-	}
+	go initOtelTracing(log)
 
 	flag.Parse()
 
