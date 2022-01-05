@@ -83,6 +83,7 @@ var FORCEUSER = "0"
 var PERCENTNORMAL = 99
 
 func main() {
+
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	log := logrus.New()
@@ -97,18 +98,13 @@ func main() {
 	}
 	log.Out = os.Stdout
 
+	go initOtelTracing(log)
+
 	FORCEUSER = os.Getenv("FORCE_USER")
 
 	p, err := strconv.Atoi(os.Getenv("PERCENT_NORMAL"))
 	if err == nil {
 		PERCENTNORMAL = p
-	}
-
-	if os.Getenv("DISABLE_TRACING") == "" {
-		log.Info("Tracing enabled.")
-		go initOtelTracing(log)
-	} else {
-		log.Info("Tracing disabled.")
 	}
 
 	srvPort := port
