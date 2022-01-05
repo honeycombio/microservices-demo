@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"go.opentelemetry.io/otel/trace"
 	"html/template"
 	"math/rand"
 	"net/http"
@@ -25,14 +26,13 @@ import (
 	"strings"
 	"time"
 
+	pb "github.com/GoogleCloudPlatform/microservices-demo/src/frontend/genproto"
+	"github.com/GoogleCloudPlatform/microservices-demo/src/frontend/money"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/trace"
-	pb "github.com/GoogleCloudPlatform/microservices-demo/src/frontend/genproto"
-	"github.com/GoogleCloudPlatform/microservices-demo/src/frontend/money"
 )
 
 type platformDetails struct {
@@ -309,22 +309,29 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 		s             = sessionID(r)
 	)
 
-
 	ctx := r.Context()
 	r.Context()
 	reqIDRaw := ctx.Value(ctxKeyRequestID{}) // reqIDRaw at this point is of type 'interface{}'
-		
+
 	reqID := reqIDRaw.(string)
 	var (
-		userIDKey = attribute.Key("userid")
-		cart_totalKey = attribute.Key("cart_total")
+		userIDKey    = attribute.Key("userid")
+		cartTotalKey = attribute.Key("cart_total")
 		requestIDKey = attribute.Key("requestID")
 	)
-	
-	ctx = baggage.ContextWithValues(ctx, userIDKey.String(s), requestIDKey.String(reqID))
+
+	userIdMember, _ := baggage.NewMember("userid", s)
+	bags, err := baggage.New(
+		userIdMember,
+	)
+	if err != nil {
+		renderHTTPError(log, r, w, errors.Wrap(err, "could not propagate order details"), http.StatusInternalServerError)
+		return
+	}
+
+	ctx = baggage.ContextWithBaggage(ctx, bags)
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(userIDKey.String(s), requestIDKey.String(reqID))
-
 
 	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
 		PlaceOrder(ctx, &pb.PlaceOrderRequest{
@@ -357,10 +364,8 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 		multPrice := money.MultiplySlow(*v.GetCost(), uint32(v.GetItem().GetQuantity()))
 		totalPaid = money.Must(money.Sum(totalPaid, multPrice))
 	}
-	totalpaid_float, err := strconv.ParseFloat(fmt.Sprintf("%d.%02d",totalPaid.GetUnits(), totalPaid.GetNanos()/10000000), 64)
-	span.SetAttributes(cart_totalKey.Float64(totalpaid_float))
-
-
+	totalpaid_float, err := strconv.ParseFloat(fmt.Sprintf("%d.%02d", totalPaid.GetUnits(), totalPaid.GetNanos()/10000000), 64)
+	span.SetAttributes(cartTotalKey.Float64(totalpaid_float))
 
 	currencies, err := fe.getCurrencies(r.Context())
 	if err != nil {
@@ -482,5 +487,5 @@ func renderMoney(money pb.Money) string {
 }
 
 func renderUnits(money pb.Money) string {
-	return fmt.Sprintf("%d.%02d",money.GetUnits(), money.GetNanos()/10000000)
+	return fmt.Sprintf("%d.%02d", money.GetUnits(), money.GetNanos()/10000000)
 }

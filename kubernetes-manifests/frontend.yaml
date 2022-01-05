@@ -79,7 +79,7 @@ spec:
               fieldRef:
                 fieldPath: status.podIP
           - name: OTEL_RESOURCE_ATTRIBUTES
-            value: service.name=frontend,ip=$(POD_IP)
+            value: ip=$(POD_IP)
           resources:
             requests:
               cpu: 100m
