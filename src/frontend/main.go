@@ -23,10 +23,12 @@ import (
 	middleware "go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"google.golang.org/grpc"
 	"net/http"
 	"os"
@@ -80,10 +82,11 @@ type frontendServer struct {
 }
 
 var FORCEUSER = "0"
-var PERCENTNORMAL = 99
+var PERCENTNORMAL = 75
 
 func main() {
 
+	//TODO: do we still need to set a timeout here, can we use context.Background() instead?
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 
 	log := logrus.New()
@@ -98,7 +101,9 @@ func main() {
 	}
 	log.Out = os.Stdout
 
-	go initOtelTracing(log)
+	// Initialize Tracing
+	tp := initOtelTracing(ctx, log)
+	defer func() { _ = tp.Shutdown(ctx) }()
 
 	FORCEUSER = os.Getenv("FORCE_USER")
 
@@ -155,34 +160,43 @@ func main() {
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
 }
 
-func initOtelTracing(log logrus.FieldLogger) {
+func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.TracerProvider {
 	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if endpoint == "" {
-		endpoint = "api.honeycomb.io:443"
+		endpoint = "opentelemetry-collector:4317"
 	}
 
-	ctx := context.Background()
+	// Set GRPC options to establish an insecure connection to an OpenTelemetry Collector
+	// To establish a TLS connection to a secured endpoint use:
+	//   otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, ""))
+	opts := []otlptracegrpc.Option{
+		otlptracegrpc.WithEndpoint(endpoint),
+		otlptracegrpc.WithInsecure(),
+	}
 
-	// Create an OTLP driver using an insecure connection to an OpenTelemetry Collector
-	driver := otlpgrpc.NewDriver(
-		otlpgrpc.WithInsecure(),
-		otlpgrpc.WithEndpoint(endpoint))
-
-	// Create an OTLP exporter with the driver
-	exporter, err := otlp.NewExporter(ctx, driver)
+	// Create the exporter
+	exporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(opts...))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Set the TraceProvider
-	otel.SetTracerProvider(
-		trace.NewTracerProvider(
-			trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
-		),
-	)
-
 	// Specify the TextMapPropagator to ensure spans propagate across service boundaries
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}))
+
+	// Set standard attributes per semantic conventions
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String("frontend"),
+	)
+
+	// Create and set the TraceProvider
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(res),
+	)
+	otel.SetTracerProvider(tp)
+
+	return tp
 }
 
 func mustMapEnv(target *string, envKey string) {
