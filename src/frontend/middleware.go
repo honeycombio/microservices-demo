@@ -90,12 +90,12 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		var sessionID string
-		rnum := rand.Intn(100) + 1
 		userAgent := r.UserAgent()
+		rnd := rand.Intn(100) + 1
 
 		// If the request did not originate from the load generator (useragent contains python)
-		// OR the random number is within percent normal and FORCEUSER is not 1
-		if !strings.Contains(userAgent, "python") || (rnum <= PERCENTNORMAL && !(FORCEUSER == "1")) {
+		// OR the random number is within percent normal
+		if !strings.Contains(userAgent, "python") || rnd <= PERCENTNORMAL {
 			// generate a sparse but random-looking set of session IDs
 			rsession := 7 + rand.Intn(50) + (rand.Intn(50) * 100) + (rand.Intn(50) * 10000)
 			sessionID = strconv.Itoa(rsession)

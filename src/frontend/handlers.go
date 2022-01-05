@@ -310,26 +310,23 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	)
 
 	ctx := r.Context()
-	r.Context()
 	reqIDRaw := ctx.Value(ctxKeyRequestID{}) // reqIDRaw at this point is of type 'interface{}'
-
 	reqID := reqIDRaw.(string)
+
+	// add the UserID and requestId into OpenTelemetry Baggage to propagate across services
+	userIdMember, _ := baggage.NewMember("userid", s)
+	requestIdMember, _ := baggage.NewMember("requestID", reqID)
+	bags := baggage.FromContext(ctx)
+	bags, _ = bags.SetMember(userIdMember)
+	bags, _ = bags.SetMember(requestIdMember)
+	ctx = baggage.ContextWithBaggage(ctx, bags)
+
+	// Get current span and set additional attributes to it
 	var (
 		userIDKey    = attribute.Key("userid")
 		cartTotalKey = attribute.Key("cart_total")
 		requestIDKey = attribute.Key("requestID")
 	)
-
-	userIdMember, _ := baggage.NewMember("userid", s)
-	bags, err := baggage.New(
-		userIdMember,
-	)
-	if err != nil {
-		renderHTTPError(log, r, w, errors.Wrap(err, "could not propagate order details"), http.StatusInternalServerError)
-		return
-	}
-
-	ctx = baggage.ContextWithBaggage(ctx, bags)
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(userIDKey.String(s), requestIDKey.String(reqID))
 
@@ -364,8 +361,10 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 		multPrice := money.MultiplySlow(*v.GetCost(), uint32(v.GetItem().GetQuantity()))
 		totalPaid = money.Must(money.Sum(totalPaid, multPrice))
 	}
-	totalpaid_float, err := strconv.ParseFloat(fmt.Sprintf("%d.%02d", totalPaid.GetUnits(), totalPaid.GetNanos()/10000000), 64)
-	span.SetAttributes(cartTotalKey.Float64(totalpaid_float))
+
+	// add total paid to span
+	totalPaidNum, err := strconv.ParseFloat(fmt.Sprintf("%d.%02d", totalPaid.GetUnits(), totalPaid.GetNanos()/10000000), 64)
+	span.SetAttributes(cartTotalKey.Float64(totalPaidNum))
 
 	currencies, err := fe.getCurrencies(r.Context())
 	if err != nil {
