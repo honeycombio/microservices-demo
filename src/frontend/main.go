@@ -85,9 +85,6 @@ var PERCENTNORMAL = 75
 
 func main() {
 
-	//TODO: do we still need to set a timeout here, can we use context.Background() instead?
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-
 	log := logrus.New()
 	log.Level = logrus.DebugLevel
 	log.Formatter = &logrus.JSONFormatter{
@@ -99,6 +96,8 @@ func main() {
 		TimestampFormat: time.RFC3339Nano,
 	}
 	log.Out = os.Stdout
+
+	ctx := context.Background()
 
 	// Initialize Tracing
 	tp := initOtelTracing(ctx, log)
