@@ -21,7 +21,7 @@ import (
 )
 
 // seeded determines if the random number generator is ready.
-var seeded bool = false
+var seeded = false
 
 // CreateTrackingId generates a tracking ID.
 func CreateTrackingId(salt string) string {

@@ -30,6 +30,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"net/http"
 	"os"
 	"strconv"
@@ -81,7 +82,7 @@ type frontendServer struct {
 	adSvcConn *grpc.ClientConn
 }
 
-var PERCENTNORMAL = 75
+var PercentNormal = 75
 
 func main() {
 
@@ -105,7 +106,7 @@ func main() {
 
 	p, err := strconv.Atoi(os.Getenv("PERCENT_NORMAL"))
 	if err == nil {
-		PERCENTNORMAL = p
+		PercentNormal = p
 	}
 
 	srvPort := port
@@ -206,7 +207,7 @@ func mustMapEnv(target *string, envKey string) {
 func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string) {
 	var err error
 	*conn, err = grpc.DialContext(ctx, addr,
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
 	if err != nil {

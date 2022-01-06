@@ -32,7 +32,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	pb "github.com/GoogleCloudPlatform/microservices-demo/src/shippingservice/genproto"
+	pb "github.com/honeycombio/microservices-demo/src/shippingservice/demo/msdemo"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
