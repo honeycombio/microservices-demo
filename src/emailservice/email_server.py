@@ -15,35 +15,27 @@
 # limitations under the License.
 
 from concurrent import futures
-import argparse
 import os
-import sys
 import time
 import grpc
 from jinja2 import Environment, FileSystemLoader, select_autoescape, TemplateError
 from google.api_core.exceptions import GoogleAPICallError
-from google.auth.exceptions import DefaultCredentialsError
 
 import demo_pb2
 import demo_pb2_grpc
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
-
 from grpc import ssl_channel_credentials
 
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.trace_exporter import OTLPSpanExporter
-import opentelemetry.instrumentation.grpc
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.grpc import (
-    GrpcInstrumentorServer,
     server_interceptor,
 )
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleExportSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-# import googleclouddebugger
-# import googlecloudprofiler
 from random import randint
 from time import sleep
 
@@ -128,6 +120,10 @@ class DummyEmailService(BaseEmailService):
     logger.info('A request to send order confirmation email to {} has been received.'.format(request.email))
     return demo_pb2.Empty()
 
+  def Watch(self, request, context):
+    return health_pb2.HealthCheckResponse(
+      status=health_pb2.HealthCheckResponse.UNIMPLEMENTED)
+
 class HealthCheck():
   def Check(self, request, context):
     return health_pb2.HealthCheckResponse(
@@ -160,19 +156,23 @@ def start(dummy_mode):
 if __name__ == '__main__':
   logger.info('starting the email service in dummy mode.')
 
+  resource = Resource(attributes={
+    "service.name": os.environ.get("SERVICE_NAME"),
+    "service.version":"0.1", "ip": os.environ.get('POD_IP')
+  })
+
+  trace_provider = TracerProvider(resource=resource)
 
   otlp_exporter = OTLPSpanExporter(
-	  endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
-    insecure=True
-  )
-  
-
-  trace.set_tracer_provider(TracerProvider(resource=Resource({"service.name": "email", "service.version":"0.1", "ip": os.environ.get('POD_IP')})))
-  trace.get_tracer_provider().add_span_processor(
-      SimpleExportSpanProcessor(otlp_exporter)
+    endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
+    insecure=False,
+    credentials=ssl_channel_credentials()
   )
 
+  trace_provider.add_span_processor(
+    BatchSpanProcessor(otlp_exporter)
+  )
 
-  
+  trace.set_tracer_provider(trace_provider)
 
   start(dummy_mode = True)

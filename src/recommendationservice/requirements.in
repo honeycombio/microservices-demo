@@ -1,8 +1,8 @@
-google-api-core==1.22.0
-grpcio-health-checking==1.30.0
-grpcio==1.30.0
-python-json-logger==0.1.9
-requests==2.24.0
+google-api-core==2.3.2
+grpcio-health-checking==1.43.0
+grpcio==1.43.0
+python-json-logger==2.0.2
+requests==2.27.1
 opentelemetry-api
 opentelemetry-sdk
 opentelemetry-instrumentation
