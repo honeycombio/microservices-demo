@@ -17,11 +17,8 @@
 import os
 import random
 import time
-import traceback
 from concurrent import futures
 
-
-from google.auth.exceptions import DefaultCredentialsError
 import grpc
 
 from random import randint
@@ -34,16 +31,14 @@ from grpc_health.v1 import health_pb2_grpc
 from grpc import ssl_channel_credentials
 
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.trace_exporter import OTLPSpanExporter
-import opentelemetry.instrumentation.grpc
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.grpc import (
-    GrpcInstrumentorServer,
     GrpcInstrumentorClient,
     server_interceptor,
 )
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleExportSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from logger import getJSONLogger
 logger = getJSONLogger('recommendationservice-server')
 
@@ -104,16 +99,24 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
 if __name__ == "__main__":
     logger.info("initializing recommendationservice")
 
-    otlp_exporter = OTLPSpanExporter(
-	    endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
-        insecure=True
-    )
-  
+    resource = Resource(attributes={
+        "service.name": os.environ.get("SERVICE_NAME"),
+        "service.version":"0.1", "ip": os.environ.get('POD_IP')
+    })
 
-    trace.set_tracer_provider(TracerProvider(resource=Resource({"service.name": os.environ.get('SERVICE_NAME'), "service.version":"0.1", "ip": os.environ.get('POD_IP')})))
-    trace.get_tracer_provider().add_span_processor(
-        SimpleExportSpanProcessor(otlp_exporter)
+    trace_provider = TracerProvider(resource=resource)
+
+    otlp_exporter = OTLPSpanExporter(
+        endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
+        insecure=False,
+        credentials=ssl_channel_credentials()
     )
+
+    trace_provider.add_span_processor(
+        BatchSpanProcessor(otlp_exporter)
+    )
+
+    trace.set_tracer_provider(trace_provider)
 
     instrumentor = GrpcInstrumentorClient().instrument()
     port = os.environ.get('PORT', "8080")
