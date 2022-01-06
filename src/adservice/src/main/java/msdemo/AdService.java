@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package hipstershop;
+package msdemo;
 
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import hipstershop.Demo.Ad;
-import hipstershop.Demo.AdRequest;
-import hipstershop.Demo.AdResponse;
+import msdemo.Demo.Ad;
+import msdemo.Demo.AdRequest;
+import msdemo.Demo.AdResponse;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.StatusRuntimeException;
@@ -30,17 +29,13 @@ import io.grpc.services.*;
 import io.grpc.stub.StreamObserver;
 
 import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.context.Scope;
 import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.extension.annotations.WithSpan;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
-import java.math.*;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +46,7 @@ public final class AdService {
   private static final Logger logger = LogManager.getLogger(AdService.class);
 
   @SuppressWarnings("FieldCanBeLocal")
-  private static int MAX_ADS_TO_SERVE = 2;
+  private static final int MAX_ADS_TO_SERVE = 2;
 
   private Server server;
   private HealthStatusManager healthMgr;
@@ -94,7 +89,7 @@ public final class AdService {
     }
   }
 
-  private static class AdServiceImpl extends hipstershop.AdServiceGrpc.AdServiceImplBase {
+  private static class AdServiceImpl extends msdemo.AdServiceGrpc.AdServiceImplBase {
 
     /**
      * Retrieves ads based on context provided in the request {@code AdRequest}.

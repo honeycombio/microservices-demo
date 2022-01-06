@@ -129,3 +129,10 @@ func (fe *frontendServer) getAd(ctx context.Context, ctxKeys []string) ([]*pb.Ad
 	})
 	return resp.GetAds(), errors.Wrap(err, "failed to get ads")
 }
+
+func (fe *frontendServer) getCacheSize(ctx context.Context) (*pb.CacheSizeResponse, error) {
+
+	resp, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).GetCacheSize(ctx, &pb.Empty{})
+	return resp, errors.Wrap(err, "failed to get cache size")
+
+}

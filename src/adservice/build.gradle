@@ -74,9 +74,9 @@ googleJavaFormat {
 sourceSets {
     main {
         java {
-            srcDirs 'hipstershop'
-            srcDirs 'build/generated/source/proto/main/java/hipstershop'
-            srcDirs 'build/generated/source/proto/main/grpc/hipstershop'
+            srcDirs 'msdemo'
+            srcDirs 'build/generated/source/proto/main/java/msdemo'
+            srcDirs 'build/generated/source/proto/main/grpc/msdemo'
         }
     }
 }
@@ -93,7 +93,7 @@ task downloadRepos(type: Copy) {
 }
 
 task adService(type: CreateStartScripts) {
-    mainClassName = 'hipstershop.AdService'
+    mainClassName = 'msdemo.AdService'
     applicationName = 'AdService'
     outputDir = new File(project.buildDir, 'tmp')
     classpath = startScripts.classpath
@@ -101,7 +101,7 @@ task adService(type: CreateStartScripts) {
 }
 
 task adServiceClient(type: CreateStartScripts) {
-    mainClassName = 'hipstershop.AdServiceClient'
+    mainClassName = 'msdemo.AdServiceClient'
     applicationName = 'AdServiceClient'
     outputDir = new File(project.buildDir, 'tmp')
     classpath = startScripts.classpath
