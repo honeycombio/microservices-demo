@@ -37,6 +37,8 @@ spec:
           value: "8080"
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: opentelemetry-collector:4317
+        - name: SERVICE_NAME
+          value: email
         - name: POD_IP
           valueFrom:
             fieldRef:
