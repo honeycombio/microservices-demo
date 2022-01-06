@@ -34,6 +34,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -83,7 +84,9 @@ type frontendServer struct {
 }
 
 var PercentNormal = 75
+var CacheSizeThreshold int64 = 35000
 var CurrentCacheSize int64
+var CurrentCacheSizeLock sync.Mutex
 
 func main() {
 
@@ -108,6 +111,11 @@ func main() {
 	p, err := strconv.Atoi(os.Getenv("PERCENT_NORMAL"))
 	if err == nil {
 		PercentNormal = p
+	}
+
+	c, err := strconv.Atoi(os.Getenv("CACHE_SIZE_THRESHOLD"))
+	if err == nil {
+		CacheSizeThreshold = int64(c)
 	}
 
 	srvPort := port
@@ -208,7 +216,9 @@ func trackCacheSize(ctx context.Context, log logrus.FieldLogger, fe *frontendSer
 		if err != nil {
 			log.Error(errors.Wrapf(err, "could not fetch Cache size"))
 		}
+		CurrentCacheSizeLock.Lock()
 		CurrentCacheSize = resp.CacheSize
+		CurrentCacheSizeLock.Unlock()
 		log.Debugf("current cache size is: %d", CurrentCacheSize)
 	}
 }

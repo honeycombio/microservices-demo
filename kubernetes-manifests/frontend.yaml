@@ -70,8 +70,10 @@ spec:
             value: "0"
           - name: PERCENT_NORMAL
             value: "50"
+          - name: CACHE_SIZE_THRESHOLD
+            value: "35000"
           - name: ENV_PLATFORM
-            value: "gcp"
+            value: "aws"
           - name: OTEL_EXPORTER_OTLP_ENDPOINT
             value: opentelemetry-collector:4317
           - name: POD_IP
