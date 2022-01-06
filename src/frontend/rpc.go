@@ -17,11 +17,9 @@ package main
 import (
 	"context"
 	pb "github.com/honeycombio/microservices-demo/src/frontend/demo/msdemo"
+	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel/attribute"
 	apiTrace "go.opentelemetry.io/otel/trace"
-	"time"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -121,9 +119,6 @@ func (fe *frontendServer) getRecommendations(ctx context.Context, userID string,
 }
 
 func (fe *frontendServer) getAd(ctx context.Context, ctxKeys []string) ([]*pb.Ad, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
-	defer cancel()
-
 	resp, err := pb.NewAdServiceClient(fe.adSvcConn).GetAds(ctx, &pb.AdRequest{
 		ContextKeys: ctxKeys,
 	})

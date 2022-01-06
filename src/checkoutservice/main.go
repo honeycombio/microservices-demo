@@ -339,7 +339,7 @@ func getDiscounts(ctx context.Context, u string, cachesize int) string {
 	)
 	span.SetAttributes(userIDKey.String(u))
 	defer span.End()
-	if rand.Intn(100-1+1) < 15 {
+	if rand.Intn(100) <= 15 {
 		return loadDiscountFromDatabase(ctx, cachesize)
 	} else {
 		return ""

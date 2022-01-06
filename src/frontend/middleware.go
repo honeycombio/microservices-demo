@@ -93,11 +93,22 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 		userAgent := r.UserAgent()
 		rnd := rand.Intn(100) + 1
 
-		// If the request did not originate from the load generator (useragent contains python)
-		// OR the random number is within percent normal
-		if !strings.Contains(userAgent, "python") || rnd <= PercentNormal {
+		// DEMO: If the checkoutservice Cache size is greaer than the CacheSizeThreshold (default 35000)
+		// AND the request is from the load generator (useragent contains python)
+		// AND rnd > PercentNormal
+		// Then we will use a session id of 20109 to emphasize a problematic user
+		// sessionID will be referenced as userid in OpenTelemetry data
+		if CurrentCacheSize > CacheSizeThreshold && strings.Contains(userAgent, "python") && rnd > PercentNormal {
+			// Use the static sessionID "20109"
+			sessionID = "20109"
+			http.SetCookie(w, &http.Cookie{
+				Name:   cookieSessionID,
+				Value:  sessionID,
+				MaxAge: cookieMaxAge,
+			})
+		} else {
 			// generate a sparse but random-looking set of session IDs
-			rsession := 7 + rand.Intn(50) + (rand.Intn(50) * 100) + (rand.Intn(50) * 10000)
+			rsession := rand.Intn(25) + (rand.Intn(25) * 100) + (rand.Intn(25) * 10000)
 			sessionID = strconv.Itoa(rsession)
 
 			c, err := r.Cookie(cookieSessionID)
@@ -112,15 +123,6 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 			} else {
 				sessionID = c.Value
 			}
-
-		} else {
-			// Use the static sessionID "20109"
-			sessionID = "20109"
-			http.SetCookie(w, &http.Cookie{
-				Name:   cookieSessionID,
-				Value:  sessionID,
-				MaxAge: cookieMaxAge,
-			})
 		}
 
 		ctx := context.WithValue(r.Context(), ctxKeySessionID{}, sessionID)
