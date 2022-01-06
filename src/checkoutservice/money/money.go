@@ -17,7 +17,7 @@ package money
 import (
 	"errors"
 
-	pb "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/genproto"
+	pb "github.com/honeycombio/microservices-demo/src/checkoutservice/demo/msdemo"
 )
 
 const (
@@ -57,8 +57,7 @@ func IsNegative(m pb.Money) bool {
 	return IsValid(m) && m.GetUnits() < 0 || (m.GetUnits() == 0 && m.GetNanos() < 0)
 }
 
-// AreSameCurrency returns true if values l and r have a currency code and
-// they are the same values.
+// AreSameCurrency returns true if values l and r have a currency code, and they are the same values.
 func AreSameCurrency(l, r pb.Money) bool {
 	return l.GetCurrencyCode() == r.GetCurrencyCode() && l.GetCurrencyCode() != ""
 }
@@ -104,7 +103,7 @@ func Sum(l, r pb.Money) (pb.Money, error) {
 		units += int64(nanos / nanosMod)
 		nanos = nanos % nanosMod
 	} else {
-		// different sign. nanos guaranteed to not to go over the limit
+		// different sign. nanos guaranteed to not go over the limit
 		if units > 0 {
 			units--
 			nanos += nanosMod

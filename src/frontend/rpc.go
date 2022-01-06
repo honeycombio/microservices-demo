@@ -16,11 +16,10 @@ package main
 
 import (
 	"context"
-	"time"
+	pb "github.com/honeycombio/microservices-demo/src/frontend/demo/msdemo"
 	"go.opentelemetry.io/otel/attribute"
-	// sdkTrace "go.opentelemetry.io/otel/sdk/trace"
 	apiTrace "go.opentelemetry.io/otel/trace"
-	pb "github.com/GoogleCloudPlatform/microservices-demo/src/frontend/genproto"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -30,13 +29,13 @@ const (
 )
 
 func (fe *frontendServer) getCurrencies(ctx context.Context) ([]string, error) {
-	currs, err := pb.NewCurrencyServiceClient(fe.currencySvcConn).
+	curSvc, err := pb.NewCurrencyServiceClient(fe.currencySvcConn).
 		GetSupportedCurrencies(ctx, &pb.Empty{})
 	if err != nil {
 		return nil, err
 	}
 	var out []string
-	for _, c := range currs.CurrencyCodes {
+	for _, c := range curSvc.CurrencyCodes {
 		if _, ok := whitelistedCurrencies[c]; ok {
 			out = append(out, c)
 		}
@@ -102,12 +101,12 @@ func (fe *frontendServer) getRecommendations(ctx context.Context, userID string,
 	resp, err := pb.NewRecommendationServiceClient(fe.recommendationSvcConn).ListRecommendations(ctx,
 		&pb.ListRecommendationsRequest{UserId: userID, ProductIds: productIDs})
 	span := apiTrace.SpanFromContext(ctx)
-	len_products := len(resp.GetProductIds())
-	span.SetAttributes(attribute.Int("num_products", len_products))
+	lenProducts := len(resp.GetProductIds())
+	span.SetAttributes(attribute.Int("num_products", lenProducts))
 	if err != nil {
 		return nil, err
-	}	
-	out := make([]*pb.Product, len_products)
+	}
+	out := make([]*pb.Product, lenProducts)
 	for i, v := range resp.GetProductIds() {
 		p, err := fe.getProduct(ctx, v)
 		if err != nil {

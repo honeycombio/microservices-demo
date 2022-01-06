@@ -26,9 +26,9 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/GoogleCloudPlatform/microservices-demo/src/frontend/genproto"
-	"github.com/GoogleCloudPlatform/microservices-demo/src/frontend/money"
 	"github.com/gorilla/mux"
+	pb "github.com/honeycombio/microservices-demo/src/frontend/demo/msdemo"
+	"github.com/honeycombio/microservices-demo/src/frontend/money"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"

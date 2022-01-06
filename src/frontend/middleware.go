@@ -85,7 +85,7 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func ensureSessionID(next http.Handler) http.HandlerFunc {
 	// adds a sessionID to the session.
-	// For the most part (PERCENTNORMAL) the sessionID will be a sparse but random-looking set of IDs
+	// For the most part (PERCENT_NORMAL) the sessionID will be a sparse but random-looking set of IDs
 	// For all other circumstances a specific sessionID of "20109" will be used
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,7 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 
 		// If the request did not originate from the load generator (useragent contains python)
 		// OR the random number is within percent normal
-		if !strings.Contains(userAgent, "python") || rnd <= PERCENTNORMAL {
+		if !strings.Contains(userAgent, "python") || rnd <= PercentNormal {
 			// generate a sparse but random-looking set of session IDs
 			rsession := 7 + rand.Intn(50) + (rand.Intn(50) * 100) + (rand.Intn(50) * 10000)
 			sessionID = strconv.Itoa(rsession)

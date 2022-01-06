@@ -19,7 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	pb "github.com/GoogleCloudPlatform/microservices-demo/src/shippingservice/genproto"
+	pb "github.com/honeycombio/microservices-demo/src/shippingservice/demo/msdemo"
 )
 
 // TestGetQuote is a basic check on the GetQuote RPC service.
@@ -83,7 +83,6 @@ func TestShipOrder(t *testing.T) {
 	if err != nil {
 		t.Errorf("TestShipOrder (%v) failed", err)
 	}
-	// @todo improve quality of this test to check for a pattern such as '[A-Z]{2}-\d+-\d+'.
 	if len(res.TrackingId) != 18 {
 		t.Errorf("TestShipOrder: Tracking ID is malformed - has %d characters, %d expected", len(res.TrackingId), 18)
 	}

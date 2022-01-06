@@ -17,9 +17,9 @@ package main
 import (
 	"context"
 	"fmt"
-	pb "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/genproto"
-	"github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/money"
 	"github.com/google/uuid"
+	pb "github.com/honeycombio/microservices-demo/src/checkoutservice/demo/msdemo"
+	"github.com/honeycombio/microservices-demo/src/checkoutservice/money"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -191,6 +191,12 @@ func (cs *checkoutService) Watch(_ *healthpb.HealthCheckRequest, _ healthpb.Heal
 	return status.Errorf(codes.Unimplemented, "health check via Watch not implemented")
 }
 
+func (cs *checkoutService) GetCacheSize(_ context.Context, _ *pb.Empty) (*pb.CacheSizeResponse, error) {
+	return &pb.CacheSizeResponse{
+		CacheSize: int64(requestCache.ItemCount()),
+	}, nil
+}
+
 func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (*pb.PlaceOrderResponse, error) {
 	log.Infof("[PlaceOrder] user_id=%q user_currency=%q", req.UserId, req.UserCurrency)
 
@@ -300,25 +306,25 @@ func getRandomData(max int, peak int) float32 {
 	return num
 }
 
-func mockDatabaseCall(ctx context.Context, expectedtime int) {
+func mockDatabaseCall(ctx context.Context, expectedTime int) {
 	tracer := otel.GetTracerProvider().Tracer("")
 	ctx, span := tracer.Start(ctx, "SQL SELECT")
 	var (
-		querykey = attribute.Key("db.query")
+		queryKey = attribute.Key("db.query")
 	)
-	span.SetAttributes(querykey.String("select * from discounts where user = ?"))
+	span.SetAttributes(queryKey.String("select * from discounts where user = ?"))
 	defer span.End()
-	rnd := getRandomData(expectedtime, 4)
+	rnd := getRandomData(expectedTime, 4)
 
 	time.Sleep((time.Duration(rnd)) * time.Millisecond)
 }
 
 func loadDiscountFromDatabase(ctx context.Context, cachesize int) string {
 
-	rnum := float64(cachesize / 5000)
-	expectedtime := math.Pow(rnum, 4)
-	numcalls := int(expectedtime / 200)
-	for i := 1; i < numcalls; i++ {
+	rnd := float64(cachesize / 5000)
+	expectedTime := math.Pow(rnd, 4)
+	numCalls := int(expectedTime / 200)
+	for i := 1; i < numCalls; i++ {
 		mockDatabaseCall(ctx, 100)
 	}
 
