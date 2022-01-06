@@ -22,8 +22,8 @@ namespace cartservice.cartstore
     internal class LocalCartStore : ICartStore
     {
         // Maps between user and their cart
-        private ConcurrentDictionary<string, Hipstershop.Cart> userCartItems = new ConcurrentDictionary<string, Hipstershop.Cart>();
-        private readonly Hipstershop.Cart emptyCart = new Hipstershop.Cart();
+        private ConcurrentDictionary<string, Msdemo.Cart> userCartItems = new ConcurrentDictionary<string, Msdemo.Cart>();
+        private readonly Msdemo.Cart emptyCart = new Msdemo.Cart();
 
         public Task InitializeAsync()
         {
@@ -35,10 +35,10 @@ namespace cartservice.cartstore
         public Task AddItemAsync(string userId, string productId, int quantity)
         {
             Console.WriteLine($"AddItemAsync called with userId={userId}, productId={productId}, quantity={quantity}");
-            var newCart = new Hipstershop.Cart
+            var newCart = new Msdemo.Cart
                 {
                     UserId = userId,
-                    Items = { new Hipstershop.CartItem { ProductId = productId, Quantity = quantity } }
+                    Items = { new Msdemo.CartItem { ProductId = productId, Quantity = quantity } }
                 };
             userCartItems.AddOrUpdate(userId, newCart,
             (k, exVal) =>
@@ -51,7 +51,7 @@ namespace cartservice.cartstore
                 }
                 else
                 {
-                    exVal.Items.Add(new Hipstershop.CartItem { ProductId = productId, Quantity = quantity });
+                    exVal.Items.Add(new Msdemo.CartItem { ProductId = productId, Quantity = quantity });
                 }
 
                 return exVal;
@@ -63,15 +63,15 @@ namespace cartservice.cartstore
         public Task EmptyCartAsync(string userId)
         {
             Console.WriteLine($"EmptyCartAsync called with userId={userId}");
-            userCartItems[userId] = new Hipstershop.Cart();
+            userCartItems[userId] = new Msdemo.Cart();
 
             return Task.CompletedTask;
         }
 
-        public Task<Hipstershop.Cart> GetCartAsync(string userId)
+        public Task<Msdemo.Cart> GetCartAsync(string userId)
         {
             Console.WriteLine($"GetCartAsync called with userId={userId}");
-            Hipstershop.Cart cart = null;
+            Msdemo.Cart cart = null;
             if (!userCartItems.TryGetValue(userId, out cart))
             {
                 Console.WriteLine($"No carts for user {userId}");

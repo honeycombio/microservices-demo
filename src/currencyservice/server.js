@@ -35,7 +35,7 @@ const HEALTH_PROTO_PATH = path.join(__dirname, './proto/grpc/health/v1/health.pr
 
 const PORT = process.env.PORT;
 
-const shopProto = _loadProto(MAIN_PROTO_PATH).hipstershop;
+const shopProto = _loadProto(MAIN_PROTO_PATH).msdemo;
 const healthProto = _loadProto(HEALTH_PROTO_PATH).grpc.health.v1;
 
 const logger = pino({

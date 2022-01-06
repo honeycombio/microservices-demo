@@ -83,6 +83,7 @@ type frontendServer struct {
 }
 
 var PercentNormal = 75
+var CurrentCacheSize int64
 
 func main() {
 
@@ -153,6 +154,8 @@ func main() {
 	handler = &logHandler{log: log, next: handler} // add logging
 	handler = ensureSessionID(handler)             // add session ID
 
+	go trackCacheSize(ctx, log, svc)
+
 	log.Infof("starting server on " + addr + ":" + srvPort)
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
 }
@@ -194,6 +197,20 @@ func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.Trac
 	otel.SetTracerProvider(tp)
 
 	return tp
+}
+
+func trackCacheSize(ctx context.Context, log logrus.FieldLogger, fe *frontendServer) {
+	log.Infof("starting cache size tracker")
+	ticker := time.NewTicker(10 * time.Second)
+	for range ticker.C {
+		resp, _ := fe.getCacheSize(ctx)
+		resp, err := fe.getCacheSize(ctx)
+		if err != nil {
+			log.Error(errors.Wrapf(err, "could not fetch Cache size"))
+		}
+		CurrentCacheSize = resp.CacheSize
+		log.Debugf("current cache size is: %d", CurrentCacheSize)
+	}
 }
 
 func mustMapEnv(target *string, envKey string) {

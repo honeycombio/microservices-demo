@@ -15,9 +15,9 @@
 using System;
 using System.Threading.Tasks;
 using Grpc.Core;
-using Hipstershop;
+using Msdemo;
 using Xunit;
-using static Hipstershop.CartService;
+using static Msdemo.CartService;
 
 namespace cartservice
 {

@@ -14,7 +14,8 @@
 
 syntax = "proto3";
 
-package hipstershop;
+package msdemo;
+option go_package = "demo/msdemo";
 
 // -----------------Cart service-----------------
 
@@ -221,6 +222,7 @@ message SendOrderConfirmationRequest {
 
 service CheckoutService {
     rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse) {}
+    rpc GetCacheSize(Empty) returns (CacheSizeResponse) {}
 }
 
 message PlaceOrderRequest {
@@ -234,6 +236,10 @@ message PlaceOrderRequest {
 
 message PlaceOrderResponse {
     OrderResult order = 1;
+}
+
+message CacheSizeResponse {
+    int64 cache_size = 1;
 }
 
 // ------------Ad service------------------

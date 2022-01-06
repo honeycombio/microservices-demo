@@ -37,12 +37,12 @@ function getRandomInt(max) {
 }
 
 
-class HipsterShopServer {
-  constructor (protoRoot, port = HipsterShopServer.PORT) {
+class MicroservicesDemoServer {
+  constructor (protoRoot, port = MicroservicesDemoServer.PORT) {
     this.port = port;
 
     this.packages = {
-      hipsterShop: this.loadProto(path.join(protoRoot, 'demo.proto')),
+      msdemo: this.loadProto(path.join(protoRoot, 'demo.proto')),
       health: this.loadProto(path.join(protoRoot, 'grpc/health/v1/health.proto'))
     };
 
@@ -92,25 +92,25 @@ class HipsterShopServer {
   }
 
   loadAllProtos (protoRoot) {
-    const hipsterShopPackage = this.packages.hipsterShop.hipstershop;
+    const msdemoPackage = this.packages.msdemo.msdemo;
     const healthPackage = this.packages.health.grpc.health.v1;
 
     this.server.addService(
-      hipsterShopPackage.PaymentService.service,
+      msdemoPackage.PaymentService.service,
       {
-        charge: HipsterShopServer.ChargeServiceHandler.bind(this)
+        charge: MicroservicesDemoServer.ChargeServiceHandler.bind(this)
       }
     );
 
     this.server.addService(
       healthPackage.Health.service,
       {
-        check: HipsterShopServer.CheckHandler.bind(this)
+        check: MicroservicesDemoServer.CheckHandler.bind(this)
       }
     );
   }
 }
 
-HipsterShopServer.PORT = process.env.PORT;
+MicroservicesDemoServer.PORT = process.env.PORT;
 
-module.exports = HipsterShopServer;
+module.exports = MicroservicesDemoServer;

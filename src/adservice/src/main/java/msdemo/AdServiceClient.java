@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package hipstershop;
+package msdemo;
 
-import hipstershop.Demo.Ad;
-import hipstershop.Demo.AdRequest;
-import hipstershop.Demo.AdResponse;
+import msdemo.Demo.Ad;
+import msdemo.Demo.AdRequest;
+import msdemo.Demo.AdResponse;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -28,13 +28,10 @@ import io.grpc.StatusRuntimeException;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.extension.annotations.WithSpan;
 import io.opentelemetry.context.Scope;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
-import javax.swing.plaf.PanelUI;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -46,7 +43,7 @@ public class AdServiceClient {
   private static final Logger logger = LogManager.getLogger(AdServiceClient.class);
 
   private final ManagedChannel channel;
-  private final hipstershop.AdServiceGrpc.AdServiceBlockingStub blockingStub;
+  private final msdemo.AdServiceGrpc.AdServiceBlockingStub blockingStub;
 
   /** Construct client connecting to Ad Service at {@code host:port}. */
   private AdServiceClient(String host, int port) {
@@ -61,7 +58,7 @@ public class AdServiceClient {
   /** Construct client for accessing RouteGuide server using the existing channel. */
   private AdServiceClient(ManagedChannel channel) {
     this.channel = channel;
-    blockingStub = hipstershop.AdServiceGrpc.newBlockingStub(channel);
+    blockingStub = msdemo.AdServiceGrpc.newBlockingStub(channel);
   }
 
   private void shutdown() throws InterruptedException {

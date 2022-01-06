@@ -38,7 +38,7 @@ namespace cartservice.cartstore
         public RedisCartStore(string redisAddress)
         {
             // Serialize empty cart into byte array.
-            var cart = new Hipstershop.Cart();
+            var cart = new Msdemo.Cart();
             emptyCartBytes = cart.ToByteArray();
             connectionString = $"{redisAddress},ssl=false,allowAdmin=true,connectRetry=5";
 
@@ -120,20 +120,20 @@ namespace cartservice.cartstore
                 // Access the cart from the cache
                 var value = await db.HashGetAsync(userId, CART_FIELD_NAME);
 
-                Hipstershop.Cart cart;
+                Msdemo.Cart cart;
                 if (value.IsNull)
                 {
-                    cart = new Hipstershop.Cart();
+                    cart = new Msdemo.Cart();
                     cart.UserId = userId;
-                    cart.Items.Add(new Hipstershop.CartItem { ProductId = productId, Quantity = quantity });
+                    cart.Items.Add(new Msdemo.CartItem { ProductId = productId, Quantity = quantity });
                 }
                 else
                 {
-                    cart = Hipstershop.Cart.Parser.ParseFrom(value);
+                    cart = Msdemo.Cart.Parser.ParseFrom(value);
                     var existingItem = cart.Items.SingleOrDefault(i => i.ProductId == productId);
                     if (existingItem == null)
                     {
-                        cart.Items.Add(new Hipstershop.CartItem { ProductId = productId, Quantity = quantity });
+                        cart.Items.Add(new Msdemo.CartItem { ProductId = productId, Quantity = quantity });
                     }
                     else
                     {
@@ -167,7 +167,7 @@ namespace cartservice.cartstore
             }
         }
 
-        public async Task<Hipstershop.Cart> GetCartAsync(string userId)
+        public async Task<Msdemo.Cart> GetCartAsync(string userId)
         {
             Console.WriteLine($"GetCartAsync called with userId={userId}");
 
@@ -182,11 +182,11 @@ namespace cartservice.cartstore
 
                 if (!value.IsNull)
                 {
-                    return Hipstershop.Cart.Parser.ParseFrom(value);
+                    return Msdemo.Cart.Parser.ParseFrom(value);
                 }
 
                 // We decided to return empty cart in cases when user wasn't in the cache before
-                return new Hipstershop.Cart();
+                return new Msdemo.Cart();
             }
             catch (Exception ex)
             {

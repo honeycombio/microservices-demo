@@ -20,28 +20,28 @@ build:
   # must provide a "default repo" using one of the methods described
   # here:
   # https://skaffold.dev/docs/concepts/#image-repository-handling
-  - image: emailservice
-    context: src/emailservice
-  - image: productcatalogservice
-    context: src/productcatalogservice
-  - image: recommendationservice
-    context: src/recommendationservice
-  - image: shippingservice
-    context: src/shippingservice
-  - image: checkoutservice
-    context: src/checkoutservice
-  - image: paymentservice
-    context: src/paymentservice
-  - image: currencyservice
-    context: src/currencyservice
-  - image: cartservice
-    context: src/cartservice
-  - image: frontend
-    context: src/frontend
-  - image: loadgenerator
-    context: src/loadgenerator
-  - image: adservice
-    context: src/adservice
+    - image: adservice
+      context: src/adservice
+    - image: cartservice
+      context: src/cartservice
+    - image: checkoutservice
+      context: src/checkoutservice
+    - image: currencyservice
+      context: src/currencyservice
+    - image: emailservice
+      context: src/emailservice
+    - image: frontend
+      context: src/frontend
+    - image: loadgenerator
+      context: src/loadgenerator
+    - image: paymentservice
+      context: src/paymentservice
+    - image: productcatalogservice
+      context: src/productcatalogservice
+    - image: recommendationservice
+      context: src/recommendationservice
+    - image: shippingservice
+      context: src/shippingservice
   tagPolicy:
     gitCommit: {}
   local:
@@ -49,5 +49,5 @@ build:
 deploy:
   kubectl:
     manifests:
-    - ./kubernetes-manifests/**.yaml
+      - ./kubernetes-manifests/**.yaml
 

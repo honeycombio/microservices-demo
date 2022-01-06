@@ -17,12 +17,12 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using cartservice.cartstore;
-using Hipstershop;
+using Msdemo;
 using System.Threading;
 
 namespace cartservice.services
 {
-    public class CartService : Hipstershop.CartService.CartServiceBase
+    public class CartService : Msdemo.CartService.CartServiceBase
     {
         private readonly static Empty Empty = new Empty();
         private readonly ICartStore _cartStore;
