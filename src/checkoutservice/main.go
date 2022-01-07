@@ -136,7 +136,7 @@ func randWait() {
 }
 
 func main() {
-	// Initialize Tracing
+	// Initialize OpenTelemetry Tracing
 	ctx := context.Background()
 	tp := initOtelTracing(ctx, log)
 	defer func() { _ = tp.Shutdown(ctx) }()
@@ -161,9 +161,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var srv *grpc.Server
-
-	srv = grpc.NewServer(
+	// create gRPC server with OpenTelemetry instrumentation on all incoming requests
+	srv := grpc.NewServer(
 		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 	)
@@ -209,6 +208,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		cachesizeKey = attribute.Key("cachesize")
 	)
 
+	// get userID and requestsID from Tracing Baggage
 	bags := baggage.FromContext(ctx)
 	userID := bags.Member("userid").Value()
 	requestID := bags.Member("requestID").Value()
@@ -226,14 +226,9 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	}
 	cachesize := requestCache.ItemCount()
 
-	orderIDMember, err := baggage.NewMember("orderid", orderID.String())
-	if err != nil {
-		// return bad
-	}
-	bags, err = bags.SetMember(orderIDMember)
-	if err != nil {
-		// return bad
-	}
+	// Add orderid to Tracing Baggage
+	orderIDMember, _ := baggage.NewMember("orderid", orderID.String())
+	bags, _ = bags.SetMember(orderIDMember)
 	ctx = baggage.ContextWithBaggage(ctx, bags)
 
 	span := trace.SpanFromContext(ctx)
@@ -381,6 +376,7 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 }
 
 func (cs *checkoutService) quoteShipping(ctx context.Context, address *pb.Address, items []*pb.CartItem) (*pb.Money, error) {
+	// add OpenTelemetry instrumentation to outgoing gRPC requests
 	conn, err := grpc.DialContext(ctx, cs.shippingSvcAddr,
 		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
@@ -405,15 +401,17 @@ func (cs *checkoutService) quoteShipping(ctx context.Context, address *pb.Addres
 }
 
 func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*pb.CartItem, error) {
+	// add OpenTelemetry instrumentation to outgoing gRPC requests
+	conn, err := grpc.DialContext(ctx, cs.cartSvcAddr, grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
+
 	var (
 		userIDKey = attribute.Key("userid")
 	)
 
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(userIDKey.String(userID))
-	conn, err := grpc.DialContext(ctx, cs.cartSvcAddr, grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
 
 	if err != nil {
 		return nil, fmt.Errorf("could not connect cart service: %+v", err)
@@ -431,6 +429,7 @@ func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*p
 }
 
 func (cs *checkoutService) emptyUserCart(ctx context.Context, userID string) error {
+	// add OpenTelemetry instrumentation to outgoing gRPC requests
 	conn, err := grpc.DialContext(ctx, cs.cartSvcAddr, grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
@@ -450,11 +449,12 @@ func (cs *checkoutService) emptyUserCart(ctx context.Context, userID string) err
 }
 
 func (cs *checkoutService) prepOrderItems(ctx context.Context, items []*pb.CartItem, userCurrency string) ([]*pb.OrderItem, error) {
-	out := make([]*pb.OrderItem, len(items))
-
+	// add OpenTelemetry instrumentation to outgoing gRPC requests
 	conn, err := grpc.DialContext(ctx, cs.productCatalogSvcAddr, grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
+
+	out := make([]*pb.OrderItem, len(items))
 
 	if err != nil {
 		return nil, fmt.Errorf("could not connect product catalog service: %+v", err)
@@ -482,6 +482,7 @@ func (cs *checkoutService) prepOrderItems(ctx context.Context, items []*pb.CartI
 }
 
 func (cs *checkoutService) convertCurrency(ctx context.Context, from *pb.Money, toCurrency string) (*pb.Money, error) {
+	// add OpenTelemetry instrumentation to outgoing gRPC requests
 	conn, err := grpc.DialContext(ctx, cs.currencySvcAddr, grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
@@ -503,6 +504,7 @@ func (cs *checkoutService) convertCurrency(ctx context.Context, from *pb.Money, 
 }
 
 func (cs *checkoutService) chargeCard(ctx context.Context, amount *pb.Money, paymentInfo *pb.CreditCardInfo) (string, error) {
+	// add OpenTelemetry instrumentation to outgoing gRPC requests
 	conn, err := grpc.DialContext(ctx, cs.paymentSvcAddr, grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
@@ -525,9 +527,11 @@ func (cs *checkoutService) chargeCard(ctx context.Context, amount *pb.Money, pay
 }
 
 func (cs *checkoutService) sendOrderConfirmation(ctx context.Context, email string, order *pb.OrderResult) error {
+	// add OpenTelemetry instrumentation to outgoing gRPC requests
 	conn, err := grpc.DialContext(ctx, cs.emailSvcAddr, grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
+
 	if err != nil {
 		return fmt.Errorf("failed to connect email service: %+v", err)
 	}
@@ -542,11 +546,11 @@ func (cs *checkoutService) sendOrderConfirmation(ctx context.Context, email stri
 }
 
 func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, items []*pb.CartItem) (string, error) {
-	conn, err := grpc.DialContext(ctx,
-		cs.shippingSvcAddr,
-		grpc.WithInsecure(),
+	// add OpenTelemetry instrumentation to outgoing gRPC requests
+	conn, err := grpc.DialContext(ctx, cs.shippingSvcAddr, grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
+
 	if err != nil {
 		return "", fmt.Errorf("failed to connect email service: %+v", err)
 	}

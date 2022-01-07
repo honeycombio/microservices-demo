@@ -116,7 +116,7 @@ func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.Trac
 }
 
 func main() {
-	// Initialize Tracing
+	// Initialize OpenTelemetry Tracing
 	ctx := context.Background()
 	tp := initOtelTracing(ctx, log)
 	defer func() { _ = tp.Shutdown(ctx) }()
@@ -132,9 +132,8 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	var srv *grpc.Server
-
-	srv = grpc.NewServer(
+	// create gRPC server with OpenTelemetry instrumentation on all incoming requests
+	srv := grpc.NewServer(
 		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 	)

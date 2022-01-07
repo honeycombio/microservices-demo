@@ -1,6 +1,6 @@
-# Frontend
+# frontend service
 
-The **Frontend** service is responsible for rendering the UI for the store's website.
+The **frontend** service is responsible for rendering the UI for the store's website.
 It serves as the main entry point for the application.
 The application uses Server Side Rendering (SSR) to generate HTML consumed by the browser.
 
@@ -25,7 +25,7 @@ The following routes are defined by the frontend:
 
 The OpenTelemetry SDK is initialized in `main` using the `initOtelTracing` function.
 This function contains the boilerplate code required to initialize a `TraceProvider`.
-gRPC calls have instrumentation hooks, enabled by the `mustConnGRPC` function.
+All outgoing gRPC calls have instrumentation hooks, enabled by the `mustConnGRPC` function.
 This function is used to wrap the gRPC connections for all downstream services that Frontend will call.
 
 ### Baggage

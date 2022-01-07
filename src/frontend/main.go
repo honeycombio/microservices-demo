@@ -104,7 +104,7 @@ func main() {
 
 	ctx := context.Background()
 
-	// Initialize Tracing
+	// Initialize OpenTelemetry Tracing
 	tp := initOtelTracing(ctx, log)
 	defer func() { _ = tp.Shutdown(ctx) }()
 
@@ -232,6 +232,7 @@ func mustMapEnv(target *string, envKey string) {
 }
 
 func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string) {
+	// add OpenTelemetry instrumentation to outgoing gRPC requests
 	var err error
 	*conn, err = grpc.DialContext(ctx, addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
