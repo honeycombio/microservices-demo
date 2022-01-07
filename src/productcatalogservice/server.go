@@ -53,7 +53,6 @@ var (
 	cat          pb.ListProductsResponse
 	catalogMutex *sync.Mutex
 	log          *logrus.Logger
-	extraLatency time.Duration
 
 	port = "3550"
 
@@ -139,18 +138,6 @@ func main() {
 
 	flag.Parse()
 
-	// set injected latency
-	if s := os.Getenv("EXTRA_LATENCY"); s != "" {
-		v, err := time.ParseDuration(s)
-		if err != nil {
-			log.Fatalf("failed to parse EXTRA_LATENCY (%s) as time.Duration: %+v", v, err)
-		}
-		extraLatency = v
-		log.Infof("extra latency enabled (duration: %v)", extraLatency)
-	} else {
-		extraLatency = time.Duration(0)
-	}
-
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGUSR1, syscall.SIGUSR2)
 	go func() {
@@ -235,12 +222,12 @@ func (p *productCatalog) Watch(_ *healthpb.HealthCheckRequest, _ healthpb.Health
 }
 
 func (p *productCatalog) ListProducts(context.Context, *pb.Empty) (*pb.ListProductsResponse, error) {
-	time.Sleep(extraLatency)
+	randWait()
 	return &pb.ListProductsResponse{Products: parseCatalog()}, nil
 }
 
 func (p *productCatalog) GetProduct(_ context.Context, req *pb.GetProductRequest) (*pb.Product, error) {
-	time.Sleep(extraLatency)
+	randWait()
 	var found *pb.Product
 	for i := 0; i < len(parseCatalog()); i++ {
 		if req.Id == parseCatalog()[i].Id {
@@ -254,7 +241,7 @@ func (p *productCatalog) GetProduct(_ context.Context, req *pb.GetProductRequest
 }
 
 func (p *productCatalog) SearchProducts(_ context.Context, req *pb.SearchProductsRequest) (*pb.SearchProductsResponse, error) {
-	time.Sleep(extraLatency)
+	randWait()
 	// Interpret query as a substring match in name or description.
 	var ps []*pb.Product
 	for _, p := range parseCatalog() {
