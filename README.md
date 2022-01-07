@@ -13,116 +13,84 @@ This application works on any Kubernetes cluster. It’s **easy to deploy with l
 
 ## Screenshots
 
-| Home Page                                                                                                         | Checkout Screen                                                                                                    |
-| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Home Page                                                                                                               | Checkout Screen                                                                                                          |
+|-------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
 | [![Screenshot of store homepage](./docs/img/online-boutique-frontend-1.png)](./docs/img/online-boutique-frontend-1.png) | [![Screenshot of checkout screen](./docs/img/online-boutique-frontend-2.png)](./docs/img/online-boutique-frontend-2.png) |
 
+## Development
 
-## Quickstart (GKE)
+### Prerequisites
 
-[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/honeycombio/microservices-demo&cloudshell_tutorial=README.md)
+- [Docker for Desktop](https://www.docker.com/products/docker-desktop).
+- kubectl (can be installed via `gcloud components install kubectl`)
+- [skaffold]( https://skaffold.dev/docs/install/), a tool that builds and deploys Docker images in bulk.
 
-1. **[Create a Google Cloud Platform project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project)** or use an existing project. Set the `PROJECT_ID` environment variable and ensure the Google Kubernetes Engine and Cloud Operations APIs are enabled.
+### Install
 
-```
-PROJECT_ID="<your-project-id>"
-gcloud services enable container.googleapis.com --project ${PROJECT_ID}
-gcloud services enable monitoring.googleapis.com \
-    cloudtrace.googleapis.com \
-    clouddebugger.googleapis.com \
-    cloudprofiler.googleapis.com \
-    --project ${PROJECT_ID}
-```
+1. Launch a local Kubernetes cluster with one of the following tools:
 
-2. **Clone this repository.**
+  - To launch **Minikube** (tested with Ubuntu Linux). Please, ensure that the
+    local Kubernetes cluster has at least:
+    - 4 CPUs
+    - 4.0 GiB memory
+    - 32 GB disk space
 
-```
-git clone https://github.com/GoogleCloudPlatform/microservices-demo.git
-cd microservices-demo
-```
+    ```shell
+    minikube start --cpus=4 --memory 4096 --disk-size 32g
+    ```
 
-3. **Create a GKE cluster.**
+  - To launch **Docker for Desktop** (tested with Mac/Windows). Go to Preferences:
+    - choose “Enable Kubernetes”,
+    - set CPUs to at least 3, and Memory to at least 6.0 GiB
+    - on the "Disk" tab, set at least 32 GB disk space
 
-```
-ZONE=us-central1-b
-gcloud container clusters create onlineboutique \
-    --project=${PROJECT_ID} --zone=${ZONE} \
-    --machine-type=e2-standard-2 --num-nodes=4
-```
+  - To launch a **Kind** cluster:
 
-4. **Deploy the sample app to the cluster.**
+    ```shell
+    kind create cluster
+    ```
 
-```
-kubectl apply -f ./release/kubernetes-manifests.yaml
-```
+2. Run `kubectl get nodes` to verify you're connected to the respective control plane.
 
-5. **Wait for the Pods to be ready.**
+3. Run `skaffold run` (first time will be slow, it can take ~20 minutes).
+   This will build and deploy the application. If you need to rebuild the images
+   automatically as you refactor the code, run `skaffold dev` command.
 
-```
-kubectl get pods
-```
+4. Run `kubectl get pods` to verify the Pods are ready and running.
 
-After a few minutes, you should see:
+5. Access the web frontend through your browser
+  - **Minikube** requires you to run a command to access the frontend service:
 
-```
-NAME                                     READY   STATUS    RESTARTS   AGE
-adservice-76bdd69666-ckc5j               1/1     Running   0          2m58s
-cartservice-66d497c6b7-dp5jr             1/1     Running   0          2m59s
-checkoutservice-666c784bd6-4jd22         1/1     Running   0          3m1s
-currencyservice-5d5d496984-4jmd7         1/1     Running   0          2m59s
-emailservice-667457d9d6-75jcq            1/1     Running   0          3m2s
-frontend-6b8d69b9fb-wjqdg                1/1     Running   0          3m1s
-loadgenerator-665b5cd444-gwqdq           1/1     Running   0          3m
-paymentservice-68596d6dd6-bf6bv          1/1     Running   0          3m
-productcatalogservice-557d474574-888kr   1/1     Running   0          3m
-recommendationservice-69c56b74d4-7z8r5   1/1     Running   0          3m1s
-redis-cart-5f59546cdd-5jnqf              1/1     Running   0          2m58s
-shippingservice-6ccc89f8fd-v686r         1/1     Running   0          2m58s
-```
+    ```shell
+    minikube service frontend-external
+    ```
 
-7. **Access the web frontend in a browser** using the frontend's `EXTERNAL_IP`.
+  - **Docker For Desktop** should automatically provide the frontend at http://localhost:80
 
-```
-kubectl get service frontend-external | awk '{print $4}'
-```
+  - **Kind** does not provision an IP address for the service.
+    You must run a port-forwarding process to access the frontend at http://localhost:8080:
 
-*Example output - do not copy*
+    ```shell
+    kubectl port-forward deployment/frontend 8080:8080
+    ```
 
-```
-EXTERNAL-IP
-<your-ip>
-```
+### Cleanup
 
-**Note**- you may see `<pending>` while GCP provisions the load balancer. If this happens, wait a few minutes and re-run the command.
-
-8. [Optional] **Clean up**:
-
-```
-gcloud container clusters delete onlineboutique \
-    --project=${PROJECT_ID} --zone=${ZONE}
-```
-
-## Other Deployment Options
-
-- **Workload Identity**: [See these instructions.](docs/workload-identity.md)
-- **Istio**: [See these instructions.](docs/service-mesh.md)
-- **Anthos Service Mesh**: ASM requires Workload Identity to be enabled in your GKE cluster. [See the workload identity instructions](docs/workload-identity.md) to configure and deploy the app. Then, use the [service mesh guide](/docs/service-mesh.md).
-- **non-GKE clusters (Minikube, Kind)**: see the [Development Guide](/docs/development-guide.md)
-- **Memorystore**: [See these instructions](/docs/memorystore.md) to replace the in-cluster `redis` database with hosted Google Cloud Memorystore (redis).
+If you've deployed the application with `skaffold run` command, you can run
+`skaffold delete` to clean up the deployed resources.
 
 
 ## Architecture
 
 **Online Boutique** is composed of 11 microservices written in different
-languages that talk to each other over gRPC. See the [Development Principles](/docs/development-principles.md) doc for more information.
+languages that talk to each other over gRPC.
 
-[![Architecture of
-microservices](./docs/img/architecture-diagram.png)](./docs/img/architecture-diagram.png)
+[![Architecture of microservices](./docs/img/architecture-diagram.png)](./docs/img/architecture-diagram.png)
 
 Find **Protocol Buffers Descriptions** at the [`./pb` directory](./pb).
 
 | Service                                              | Language      | Description                                                                                                                       |
-| ---------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+|------------------------------------------------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------|
 | [frontend](./src/frontend)                           | Go            | Exposes an HTTP server to serve the website. Does not require signup/login and generates session IDs for all users automatically. |
 | [cartservice](./src/cartservice)                     | C#            | Stores the items in the user's shopping cart in Redis and retrieves it.                                                           |
 | [productcatalogservice](./src/productcatalogservice) | Go            | Provides the list of products from a JSON file and ability to search products and get individual products.                        |
@@ -148,10 +116,6 @@ Find **Protocol Buffers Descriptions** at the [`./pb` directory](./pb).
 - **Synthetic Load Generation:** The application demo comes with a background
   job that creates realistic usage patterns on the website using
   [Locust](https://locust.io/) load generator.
-
-## Local Development
-
-If you would like to contribute features or fixes to this app, see the [Development Guide](/docs/development-guide.md) on how to build this demo locally.
 
 ---
 
