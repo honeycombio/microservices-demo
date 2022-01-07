@@ -2,22 +2,16 @@
 
 The Shipping service provides price quote, tracking IDs, and the impression of order fulfillment & shipping processes.
 
-## Local
+## OpenTelemetry instrumentation
 
-Run the following command to restore dependencies to `vendor/` directory:
+The OpenTelemetry SDK is initialized in `main` using the `initOtelTracing` function.
+This function contains the boilerplate code required to initialize a `TraceProvider`.
+This service receives gRPC requests, which are instrumented in the `main` function as part of the gRPC server creation.
 
-    dep ensure --vendor-only
-
-## Build
-
-From `src/shippingservice`, run:
-
-```
-docker build ./
-```
-
-## Test
-
-```
-go test .
+This is the code that is used to instrument the gRPC server:
+```go
+	srv = grpc.NewServer(
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
+		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
+	)
 ```
