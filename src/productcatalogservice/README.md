@@ -1,5 +1,7 @@
 # productcatalog service
 
+The **productcatalog** service provides details about all products in the application.
+
 ## Dynamic catalog reloading / artificial delay
 
 This service has a "dynamic catalog reloading" feature that is purposefully

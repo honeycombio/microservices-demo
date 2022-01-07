@@ -1,6 +1,6 @@
 # shipping service
 
-The Shipping service provides price quote, tracking IDs, and the impression of order fulfillment & shipping processes.
+The **shipping** service provides price quote, tracking IDs, and the impression of order fulfillment & shipping processes.
 
 ## OpenTelemetry instrumentation
 
