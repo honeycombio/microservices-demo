@@ -491,7 +491,7 @@ func (cs *checkoutService) convertCurrency(ctx context.Context, from *pb.Money, 
 	defer func(conn *grpc.ClientConn) {
 		_ = conn.Close()
 	}(conn)
-	result, err := pb.NewCurrencyServiceClient(conn).Convert(context.TODO(), &pb.CurrencyConversionRequest{
+	result, err := pb.NewCurrencyServiceClient(conn).Convert(ctx, &pb.CurrencyConversionRequest{
 		From:   from,
 		ToCode: toCurrency})
 	if err != nil {

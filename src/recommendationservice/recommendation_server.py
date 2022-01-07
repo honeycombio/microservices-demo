@@ -28,7 +28,6 @@ import demo_pb2
 import demo_pb2_grpc
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
-from grpc import ssl_channel_credentials
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -40,16 +39,17 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from logger import getJSONLogger
+
 logger = getJSONLogger('recommendationservice-server')
 
-
 worker_pool = futures.ThreadPoolExecutor(max_workers=10)
+
+
 class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
     def ListRecommendations(self, request, context):
-
         tracer = trace.get_tracer(__name__)
         with tracer.start_as_current_span("ListRecommendationsFunction"):
-            sleep(randint(10,250)/1000)
+            sleep(randint(10, 250) / 1000)
 
             span = trace.get_current_span()
             span.set_attribute("active_threads", len(worker_pool._threads))
@@ -58,7 +58,7 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
             # fetch list of products from product catalog stub
             cat_response = product_catalog_stub.ListProducts(demo_pb2.Empty())
             product_ids = [x.id for x in cat_response.products]
-            filtered_products = list(set(product_ids)-set(request.product_ids))
+            filtered_products = list(set(product_ids) - set(request.product_ids))
             num_products = len(filtered_products)
             num_return = min(max_responses, num_products)
             # sample list of indicies to return
@@ -70,22 +70,6 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
             response = demo_pb2.ListRecommendationsResponse()
             response.product_ids.extend(prod_list)
             return response
-        max_responses = 5
-        # fetch list of products from product catalog stub
-        cat_response = product_catalog_stub.ListProducts(demo_pb2.Empty())
-        product_ids = [x.id for x in cat_response.products]
-        filtered_products = list(set(product_ids)-set(request.product_ids))
-        num_products = len(filtered_products)
-        num_return = min(max_responses, num_products)
-        # sample list of indicies to return
-        indices = random.sample(range(num_products), num_return)
-        # fetch product ids from indices
-        prod_list = [filtered_products[i] for i in indices]
-        logger.info("[Recv ListRecommendations] product_ids={}".format(prod_list))
-        # build and return response
-        response = demo_pb2.ListRecommendationsResponse()
-        response.product_ids.extend(prod_list)
-        return response
 
     def Check(self, request, context):
         return health_pb2.HealthCheckResponse(
@@ -101,15 +85,14 @@ if __name__ == "__main__":
 
     resource = Resource(attributes={
         "service.name": os.environ.get("SERVICE_NAME"),
-        "service.version":"0.1", "ip": os.environ.get('POD_IP')
+        "service.version": "0.1", "ip": os.environ.get('POD_IP')
     })
 
     trace_provider = TracerProvider(resource=resource)
 
     otlp_exporter = OTLPSpanExporter(
         endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
-        insecure=False,
-        credentials=ssl_channel_credentials()
+        insecure=True
     )
 
     trace_provider.add_span_processor(
@@ -126,12 +109,11 @@ if __name__ == "__main__":
     logger.info("product catalog address: " + catalog_addr)
     channel = grpc.insecure_channel(catalog_addr)
     product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel)
-    interceptor = server_interceptor()
-    # create gRPC server
 
+    # create gRPC server
+    interceptor = server_interceptor()
     server = grpc.server(worker_pool,
-                      interceptors=(interceptor,))
-    server = grpc.server(worker_pool)
+                         interceptors=(interceptor,))
 
     # add class to gRPC server
     service = RecommendationService()
@@ -140,12 +122,12 @@ if __name__ == "__main__":
 
     # start server
     logger.info("listening on port: " + port)
-    server.add_insecure_port('[::]:'+port)
+    server.add_insecure_port('[::]:' + port)
     server.start()
 
     # keep alive
     try:
-         while True:
+        while True:
             time.sleep(10000)
     except KeyboardInterrupt:
-            server.stop(0)
+        server.stop(0)
