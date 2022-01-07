@@ -131,8 +131,8 @@ func randWait() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	rando := rand.Intn(max-min+1) + min
-	time.Sleep(time.Duration(rando) * time.Millisecond)
+	rnd := rand.Intn(max-min+1) + min
+	time.Sleep(time.Duration(rnd) * time.Millisecond)
 }
 
 func main() {
@@ -339,7 +339,8 @@ func getDiscounts(ctx context.Context, u string, cachesize int) string {
 	)
 	span.SetAttributes(userIDKey.String(u))
 	defer span.End()
-	if rand.Intn(100) <= 15 {
+	rnd := rand.Float32()
+	if (u == "20109" && rnd < 0.5) || (rnd < 0.15) {
 		return loadDiscountFromDatabase(ctx, cachesize)
 	} else {
 		return ""
