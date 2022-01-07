@@ -58,7 +58,6 @@ class BaseEmailService(demo_pb2_grpc.EmailServiceServicer):
 class EmailService(BaseEmailService):
     def __init__(self):
         raise Exception('cloud mail client not implemented')
-        super().__init__()
 
     @staticmethod
     def send_email(client, email_address, content):
