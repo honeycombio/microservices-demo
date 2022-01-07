@@ -1,8 +1,4 @@
-# productcatalogservice
-
-Run the following command to restore dependencies to `vendor/` directory:
-
-    dep ensure --vendor-only
+# productcatalog service
 
 ## Dynamic catalog reloading / artificial delay
 
@@ -19,7 +15,7 @@ of the CPU time.
 You can trigger this feature (and the delay) by sending a `USR1` signal and
 remove it (if needed) by sending a `USR2` signal:
 
-```
+```shell
 # Trigger bug
 kubectl exec \
     $(kubectl get pods -l app=productcatalogservice -o jsonpath='{.items[0].metadata.name}') \
@@ -30,9 +26,16 @@ kubectl exec \
     -c server -- kill -USR2 1
 ```
 
-## Latency injection
+## OpenTelemetry instrumentation
 
-This service has an `EXTRA_LATENCY` environment variable. This will inject a sleep for the specified [time.Duration](https://golang.org/pkg/time/#ParseDuration) on every call to
-to the server.
+The OpenTelemetry SDK is initialized in `main` using the `initOtelTracing` function.
+This function contains the boilerplate code required to initialize a `TraceProvider`.
+This service receives gRPC requests, which are instrumented in the `run` function as part of the gRPC server creation.
 
-For example, use `EXTRA_LATENCY="5.5s"` to sleep for 5.5 seconds on every request.
+This is the code that is used to instrument the gRPC server:
+```go
+	srv = grpc.NewServer(
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
+		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
+	)
+```
