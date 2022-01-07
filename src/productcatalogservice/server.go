@@ -70,8 +70,8 @@ func randWait() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	rando := rand.Intn(max-min+1) + min
-	time.Sleep(time.Duration(rando) * time.Millisecond)
+	rnd := rand.Intn(max-min+1) + min
+	time.Sleep(time.Duration(rnd) * time.Millisecond)
 }
 
 func init() {
