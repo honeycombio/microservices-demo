@@ -25,7 +25,7 @@ The following routes are defined by the frontend:
 
 The OpenTelemetry SDK is initialized in `main` using the `initOtelTracing` function.
 This function contains the boilerplate code required to initialize a `TraceProvider`.
-gRPC calls have instrumentation hooks, enabled by the `mustConnGRPC` function.
+All outgoing gRPC calls have instrumentation hooks, enabled by the `mustConnGRPC` function.
 This function is used to wrap the gRPC connections for all downstream services that Frontend will call.
 
 ### Baggage

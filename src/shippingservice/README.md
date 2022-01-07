@@ -10,7 +10,7 @@ This service receives gRPC requests, which are instrumented in the `main` functi
 
 This is the code that is used to instrument the gRPC server:
 ```go
-	srv = grpc.NewServer(
+	srv := grpc.NewServer(
 		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
 	)
