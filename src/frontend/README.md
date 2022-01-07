@@ -1,6 +1,6 @@
-# Frontend
+# frontend service
 
-The **Frontend** service is responsible for rendering the UI for the store's website.
+The **frontend** service is responsible for rendering the UI for the store's website.
 It serves as the main entry point for the application.
 The application uses Server Side Rendering (SSR) to generate HTML consumed by the browser.
 
