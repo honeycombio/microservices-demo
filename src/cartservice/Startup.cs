@@ -30,15 +30,21 @@ namespace cartservice
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            // Get the Service name and OTLP endpoint that will be used for OpenTelemetry
             string servicename = Environment.GetEnvironmentVariable("SERVICE_NAME");
-            string podip = Environment.GetEnvironmentVariable("POD_IP");
             string otlpendpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
-            IEnumerable<KeyValuePair<string, object>> attributes = new Dictionary<string,object> { {"ip", podip}};
             if(servicename == null || otlpendpoint == null ) {
                 Console.WriteLine("Enviornment variables missing or empty.");
             } else {
                 Console.WriteLine("Starting up the open telemetry service");
                 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+
+                string podip = Environment.GetEnvironmentVariable("POD_IP");
+                IEnumerable<KeyValuePair<string, object>> attributes = new Dictionary<string,object> { {"ip", podip}};
+
+                // Initialize the OpenTelemetry tracing API, with resource attributes
+                // initialize instrumentation for AspNetCore and HttpClient
+                // use the OTLP exporter
                 services.AddOpenTelemetryTracing((builder) => builder
                     .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(servicename).AddAttributes(attributes))
                     .AddAspNetCoreInstrumentation()
