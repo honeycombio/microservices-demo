@@ -29,29 +29,35 @@ products = [
     'OLJCESPC7Z',
     'BREAKMENOW']
 
+
 def index(l):
     l.client.get("/")
 
-def setCurrency(l):
+
+def set_currency(l):
     currencies = ['EUR', 'USD', 'JPY', 'CAD']
     l.client.post("/setCurrency",
-        {'currency_code': random.choice(currencies)})
+                  {'currency_code': random.choice(currencies)})
 
-def browseProduct(l):
+
+def browse_product(l):
     l.client.get("/product/" + random.choice(products))
 
-def viewCart(l):
+
+def view_cart(l):
     l.client.get("/cart")
 
-def addToCart(l):
+
+def add_to_cart(l):
     product = random.choice(products)
     l.client.get("/product/" + product)
     l.client.post("/cart", {
         'product_id': product,
-        'quantity': random.choice([1,2,3,4,5,10])})
+        'quantity': random.choice([1, 2, 3, 4, 5, 10])})
+
 
 def checkout(l):
-    addToCart(l)
+    add_to_cart(l)
     l.client.post("/cart/checkout", {
         'email': 'someone@example.com',
         'street_address': '1600 Amphitheatre Parkway',
@@ -65,17 +71,19 @@ def checkout(l):
         'credit_card_cvv': '672',
     })
 
+
 class UserBehavior(TaskSet):
 
     def on_start(self):
         index(self)
 
     tasks = {index: 1,
-        setCurrency: 2,
-        browseProduct: 10,
-        addToCart: 2,
-        viewCart: 3,
-        checkout: 5}
+             set_currency: 2,
+             browse_product: 10,
+             add_to_cart: 2,
+             view_cart: 3,
+             checkout: 5}
+
 
 class WebsiteUser(HttpUser):
     tasks = [UserBehavior]
