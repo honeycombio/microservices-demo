@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM openjdk:8-slim as builder
+FROM openjdk:11-slim as builder
 
 WORKDIR /app
 
@@ -25,15 +25,14 @@ COPY . .
 RUN chmod +x gradlew
 RUN ./gradlew installDist
 
-FROM openjdk:8-slim
+FROM openjdk:11-slim
 
-# Download Stackdriver Profiler Java agent
 RUN apt-get -y update && apt-get install -qqy \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/otel && \
-    wget -q -O opt/otel/javaagent.jar https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.3.0/opentelemetry-javaagent-all.jar
+    wget -q -O opt/otel/javaagent.jar https://github.com/honeycombio/honeycomb-opentelemetry-java/releases/download/v0.8.0/honeycomb-opentelemetry-javaagent-0.8.0.jar
 WORKDIR /app
 COPY --from=builder /app .
 
