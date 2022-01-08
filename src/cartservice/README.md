@@ -9,7 +9,7 @@ The OpenTelemetry SDK is initialized the the `ConfigureServices` function in `St
 As part of this initialization, AspNetCore and HttpClient instrumentation is added for all incoming requests.
 ```cs
     // Initialize the OpenTelemetry tracing API, with resource attributes
-    // initialize instrumentation for AspNetCore and HttpClient
+    // setup instrumentation for AspNetCore and HttpClient
     // use the OTLP exporter
     services.AddOpenTelemetryTracing((builder) => builder
         .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(servicename).AddAttributes(attributes))

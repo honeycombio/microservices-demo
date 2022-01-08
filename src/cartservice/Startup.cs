@@ -43,7 +43,7 @@ namespace cartservice
                 IEnumerable<KeyValuePair<string, object>> attributes = new Dictionary<string,object> { {"ip", podip}};
 
                 // Initialize the OpenTelemetry tracing API, with resource attributes
-                // initialize instrumentation for AspNetCore and HttpClient
+                // setup instrumentation for AspNetCore and HttpClient
                 // use the OTLP exporter
                 services.AddOpenTelemetryTracing((builder) => builder
                     .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(servicename).AddAttributes(attributes))
