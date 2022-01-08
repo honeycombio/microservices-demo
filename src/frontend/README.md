@@ -23,16 +23,92 @@ The following routes are defined by the frontend:
 
 ## OpenTelemetry instrumentation
 
-The OpenTelemetry SDK is initialized in `main` using the `initOtelTracing` function.
-This function contains the boilerplate code required to initialize a `TraceProvider`.
-All outgoing gRPC calls have instrumentation hooks, enabled by the `mustConnGRPC` function.
-This function is used to wrap the gRPC connections for all downstream services that Frontend will call.
+### Initialization
+The OpenTelemetry SDK is initialized in `main` using the `initOtelTracing` function
+```go
+func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.TracerProvider {
+	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if endpoint == "" {
+		endpoint = "opentelemetry-collector:4317"
+	}
+
+	// Set GRPC options to establish an insecure connection to an OpenTelemetry Collector
+	// To establish a TLS connection to a secured endpoint use:
+	//   otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, ""))
+	opts := []otlptracegrpc.Option{
+		otlptracegrpc.WithEndpoint(endpoint),
+		otlptracegrpc.WithInsecure(),
+	}
+
+	// Create the exporter
+	exporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(opts...))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Specify the TextMapPropagator to ensure spans propagate across service boundaries
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}))
+
+	// Set standard attributes per semantic conventions
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String("shipping"),
+	)
+
+	// Create and set the TraceProvider
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(res),
+	)
+	otel.SetTracerProvider(tp)
+
+	return tp
+}
+```
+
+You should call `TraceProvider.shutdown()` when your service is shutdown to ensure all spans are exported.
+This service makes that call as part of a deferred function in `main`
+```go
+	// Initialize OpenTelemetry Tracing
+	ctx := context.Background()
+	tp := initOtelTracing(ctx, log)
+	defer func() { _ = tp.Shutdown(ctx) }()
+```
+
+### HTTP instrumentation
+This service recieves HTTP requests, controlled by the gorilla/mux Router.
+These requests are instrumented in the main function as part of the router's definition.
+```go
+	// Add OpenTelemetry instrumentation to incoming HTTP requests controlled by the gorilla/mux Router.
+	r.Use(middleware.Middleware("frontend"))
+```
+
+### gRPC instrumentation
+This service will issue several outgoing gRPC calls, which have instrumentation hooks added in the `mustConnGRPC` function.
+```go
+	// add OpenTelemetry instrumentation to outgoing gRPC requests
+    var err error
+    *conn, err = grpc.DialContext(ctx, addr,
+        grpc.WithTransportCredentials(insecure.NewCredentials()),
+        grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
+        grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
+	)
+```
 
 ### Baggage
-
 This service will add some telemetry data to OpenTelemetry `Baggage`, which is propagated to downstream services.
 The `placeOrderHandler` in the `handlers.go` file will add the userid and requestid to baggage.
 The userid and requestid will be available to all downstream spans.
+```go
+	// add the UserID and requestId into OpenTelemetry Baggage to propagate across services
+	userIdMember, _ := baggage.NewMember("userid", s)
+	requestIdMember, _ := baggage.NewMember("requestID", reqID)
+	bags := baggage.FromContext(ctx)
+	bags, _ = bags.SetMember(userIdMember)
+	bags, _ = bags.SetMember(requestIdMember)
+	ctx = baggage.ContextWithBaggage(ctx, bags)
+```
+
 Baggage is propagated to downstream services, but by default it is not exported to your telemetry backend.
 A Span Processor that explicitly exports Baggage is required to export this data to a telemetry backend like Honeycomb.
 
