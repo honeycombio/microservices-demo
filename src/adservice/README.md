@@ -46,6 +46,7 @@ Attributes can be added to the span using `Span.setAttribute()`
 ```java
     // Add a span attribute
     span.setAttribute("method", "getAds");
+    span.setAttribute("context_keys", req.getContextKeysList().toString());
 ```
 
 Span events can be created using `Span.addEvent()`

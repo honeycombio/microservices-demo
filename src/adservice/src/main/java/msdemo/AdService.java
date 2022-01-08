@@ -114,6 +114,7 @@ public final class AdService {
             try {
                 // Add a span attribute
                 span.setAttribute("method", "getAds");
+                span.setAttribute("context_keys", req.getContextKeysList().toString());
 
                 //wait 50 to 200ms;
                 Thread.sleep(AdService.random_int(50, 200)); // For example
