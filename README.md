@@ -117,6 +117,29 @@ Find **Protocol Buffers Descriptions** at the [`./pb` directory](./pb).
   job that creates realistic usage patterns on the website using
   [Locust](https://locust.io/) load generator.
 
+
+## History
+
+This project originated from the excellent Google Cloud Platform [Microservices Demo](https://github.com/GoogleCloudPlatform/microservices-demo).
+It was forked in 2021, before significant changes were performed.
+All application telemetry which was previously done with OpenCensus and Stackdriver, was moved to use [OpenTelemetry](https://opentelemetry.io) for application telemetry, with tracing export intended for an OpenTelemetry Collector.
+Additional instrumentation is leveraged throughout the application to show some basic and advanced capabilities of OpenTelemetry.
+This application is used as a demo platform for the Honeycomb team, and many changes were made to the application code so it will break in ways that make for a more compelling demonstration of the Honeycomb platform.
+
+## Application demo
+This application will exhibit a problem meant to be discovered with ease using the [Honeycomb](https://honeycomb.io) platform.
+
+The checkout service has a memory leak, cause by an internal cache store.
+This service has tight Kubernetes pod/container memory limits, so the leak will cause out of memory crashes, resulting in a pod restart after approximately 4 hours.
+Code in the checkout service will introduce additional delays in the form of SQL calls under `getDiscounts`.
+The number of SQL calls made will increase as the cache size increases, creating exponentially increasing latency.
+There is additional code in the frontend service, which will introduce a specific userid (20109) after the cache limit from checkout has reached a specific threshold.
+This results in a pattern where a single user from a pool of thousands, receiving a bad experience that continues to get worse.
+
+When using Honeycomb BubbleUp, and combined with the Honeycomb SLO feature, understanding the single user from the high cardinality pool of thousands of user ids is easy to do.
+Honeycomb allows the user to ask novel questions from the data, to quickly understand the memory leak and cache problem in code.
+
+
 ---
 
 This is not an official Google or Honeycomb project.
