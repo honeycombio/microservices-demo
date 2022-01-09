@@ -1,0 +1,62 @@
+
+honeycomb:
+  # Specify either your apiKey, **OR** the  name of an existingSecret resource containing your Honeycomb API key
+  # apiKey: YOUR_API_KEY
+  # existingSecret: honeycomb-api-key
+
+  # Specify host URL to send all events to
+  apiHost: api.honeycomb.io:443
+  # Specify the name of the dataset to send data to
+  dataset: microservices-demo
+
+config:
+  processors:
+    k8s_tagger:
+      passthrough: false
+      auth_type: "kubeConfig"
+      extract:
+        metadata:
+          # extract the following well-known metadata fields
+          - podName
+          - podUID
+          - deployment
+          - cluster
+          - namespace
+          - node
+          - startTime
+  service:
+    extensions: [health_check]
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, batch, k8s_tagger]
+        exporters: [otlp]
+
+# disable ports that are not required
+ports:
+  jaeger-binary:
+    enabled: false
+  jaeger-compact:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  jaeger-http:
+    enabled: false
+  zipkin:
+    enabled: false
+
+k8sProcessor:
+  rbac:
+    name: "microservices-tagger"
+    create: true
+
+serviceAccount:
+  create: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 2Gi
+  requests:
+    cpu: 200m
+    memory: 400Mi
