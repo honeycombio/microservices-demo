@@ -4,9 +4,8 @@
 
 
 **[Online Boutique](https://microservices.demo.honeycomb.io)** is a cloud-native microservices demo application.
-Online Boutique consists of a 10-tier microservices application. The application is a
-web-based e-commerce app where users can browse items,
-add them to the cart, and purchase them.
+Online Boutique consists of a 10-tier microservices application, writen in 5 different languages: Go, Java, .NET, Node, and Python.
+The application is a web-based e-commerce platform where users can browse items, add them to a cart, and purchase them.
 
 **[Honeycomb](https://honeycomb.io)** uses this application to demonstrate use of technologies like Kubernetes, gRPC, and OpenTelemetry. 
 This application works on any Kubernetes cluster. It’s **easy to deploy with little to no configuration**.
@@ -16,6 +15,12 @@ This application works on any Kubernetes cluster. It’s **easy to deploy with l
 | Home Page                                                                                                               | Checkout Screen                                                                                                          |
 |-------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
 | [![Screenshot of store homepage](./docs/img/online-boutique-frontend-1.png)](./docs/img/online-boutique-frontend-1.png) | [![Screenshot of checkout screen](./docs/img/online-boutique-frontend-2.png)](./docs/img/online-boutique-frontend-2.png) |
+
+## OpenTelemetry
+
+Online Boutique is instrumented using the [OpenTelemetry](https://opentelemetry.io) framework. 
+There are simple and advanced instrumentation techniques offered by OpenTelemetry that are leveraged in the application.
+Each service in the [src](./src) folder explains how OpenTelemetry was used with specific code examples.
 
 ## Development
 
