@@ -56,7 +56,6 @@ class ExpiredCreditCard extends CreditCardError {
  * @return transaction_id - a random uuid v4.
  */
 module.exports = async function charge (request) {
-  await sleep(getRandomInt(100));
   const { amount, credit_card: creditCard } = request;
   const cardNumber = creditCard.credit_card_number;
   const cardInfo = cardValidator(cardNumber);

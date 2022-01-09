@@ -15,18 +15,18 @@
  */
 
 function sleep(wait_time) {
-  // mock some work by sleeping
-  return new Promise((resolve, reject) => {
-    setTimeout(resolve, wait_time);
-  })
-}
-function getRandomInt(max) {
-  return Math.floor(Math.random() * max) + 1;
+    // mock some work by sleeping
+    return new Promise((resolve, reject) => {
+        setTimeout(resolve, wait_time);
+    })
 }
 
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max) + 1;
+}
 
 const path = require('path');
-const grpc = require('grpc');
+const grpc = require('@grpc/grpc-js');
 const pino = require('pino');
 const protoLoader = require('@grpc/proto-loader');
 
@@ -39,116 +39,122 @@ const shopProto = _loadProto(MAIN_PROTO_PATH).msdemo;
 const healthProto = _loadProto(HEALTH_PROTO_PATH).grpc.health.v1;
 
 const logger = pino({
-  name: 'currencyservice-server',
-  messageKey: 'message',
-  changeLevelName: 'severity',
-  useLevelLabels: true
+    name: 'currencyservice-server',
+    messageKey: 'message',
+    changeLevelName: 'severity',
+    useLevelLabels: true
 });
 
 /**
  * Helper function that loads a protobuf file.
  */
-function _loadProto (path) {
-  const packageDefinition = protoLoader.loadSync(
-    path,
-    {
-      keepCase: true,
-      longs: String,
-      enums: String,
-      defaults: true,
-      oneofs: true
-    }
-  );
-  return grpc.loadPackageDefinition(packageDefinition);
+function _loadProto(path) {
+    const packageDefinition = protoLoader.loadSync(
+        path,
+        {
+            keepCase: true,
+            longs: String,
+            enums: String,
+            defaults: true,
+            oneofs: true
+        }
+    );
+    return grpc.loadPackageDefinition(packageDefinition);
 }
 
 /**
  * Helper function that gets currency data from a stored JSON file
  * Uses public data from European Central Bank
  */
-function _getCurrencyData (callback) {
-  const data = require('./data/currency_conversion.json');
-  callback(data);
+function _getCurrencyData(callback) {
+    const data = require('./data/currency_conversion.json');
+    callback(data);
 }
 
 /**
  * Helper function that handles decimal/fractional carrying
  */
-function _carry (amount) {
-  const fractionSize = Math.pow(10, 9);
-  amount.nanos += (amount.units % 1) * fractionSize;
-  amount.units = Math.floor(amount.units) + Math.floor(amount.nanos / fractionSize);
-  amount.nanos = amount.nanos % fractionSize;
-  return amount;
+function _carry(amount) {
+    const fractionSize = Math.pow(10, 9);
+    amount.nanos += (amount.units % 1) * fractionSize;
+    amount.units = Math.floor(amount.units) + Math.floor(amount.nanos / fractionSize);
+    amount.nanos = amount.nanos % fractionSize;
+    return amount;
 }
 
 /**
  * Lists the supported currencies
  */
-async function getSupportedCurrencies (call, callback) {
-  await sleep(getRandomInt(100));
-  logger.info('Getting supported currencies...');
-  _getCurrencyData((data) => {
-    callback(null, {currency_codes: Object.keys(data)});
-  });
+async function getSupportedCurrencies(call, callback) {
+    await sleep(getRandomInt(100));
+    logger.info('Getting supported currencies...');
+    _getCurrencyData((data) => {
+        callback(null, {currency_codes: Object.keys(data)});
+    });
 }
 
 /**
  * Converts between currencies
  */
-async function convert (call, callback) {
-  await sleep(getRandomInt(100));
-  logger.info('received conversion request');
-  try {
-    _getCurrencyData((data) => {
-      const request = call.request;
+async function convert(call, callback) {
+    await sleep(getRandomInt(100));
+    logger.info('received conversion request');
+    try {
+        _getCurrencyData((data) => {
+            const request = call.request;
 
-      // Convert: from_currency --> EUR
-      const from = request.from;
-      const euros = _carry({
-        units: from.units / data[from.currency_code],
-        nanos: from.nanos / data[from.currency_code]
-      });
+            // Convert: from_currency --> EUR
+            const from = request.from;
+            const euros = _carry({
+                units: from.units / data[from.currency_code],
+                nanos: from.nanos / data[from.currency_code]
+            });
 
-      euros.nanos = Math.round(euros.nanos);
+            euros.nanos = Math.round(euros.nanos);
 
-      // Convert: EUR --> to_currency
-      const result = _carry({
-        units: euros.units * data[request.to_code],
-        nanos: euros.nanos * data[request.to_code]
-      });
+            // Convert: EUR --> to_currency
+            const result = _carry({
+                units: euros.units * data[request.to_code],
+                nanos: euros.nanos * data[request.to_code]
+            });
 
-      result.units = Math.floor(result.units);
-      result.nanos = Math.floor(result.nanos);
-      result.currency_code = request.to_code;
+            result.units = Math.floor(result.units);
+            result.nanos = Math.floor(result.nanos);
+            result.currency_code = request.to_code;
 
-      logger.info(`conversion request successful`);
-      callback(null, result);
-    });
-  } catch (err) {
-    logger.error(`conversion request failed: ${err}`);
-    callback(err.message);
-  }
+            logger.info(`conversion request successful`);
+            callback(null, result);
+        });
+    } catch (err) {
+        logger.error(`conversion request failed: ${err}`);
+        callback(err.message);
+    }
 }
 
 /**
  * Endpoint for health checks
  */
-function check (call, callback) {
-  callback(null, { status: 'SERVING' });
+function check(call, callback) {
+    callback(null, {status: 'SERVING'});
 }
 
 /**
  * Starts an RPC server that receives requests for the
  * CurrencyConverter service at the sample server port
  */
-function main () {
-  logger.info(`Starting gRPC server on port ${PORT}...`);
-  const server = new grpc.Server();
-  server.addService(shopProto.CurrencyService.service, {getSupportedCurrencies, convert});
-  server.addService(healthProto.Health.service, {check});
-  server.bind(`0.0.0.0:${PORT}`, grpc.ServerCredentials.createInsecure());
-  server.start();
+function main() {
+    logger.info(`Starting gRPC server on port ${PORT}...`);
+    const server = new grpc.Server();
+    server.addService(shopProto.CurrencyService.service, {getSupportedCurrencies, convert});
+    server.addService(healthProto.Health.service, {check});
+    server.bindAsync(
+        `0.0.0.0:${PORT}`,
+        grpc.ServerCredentials.createInsecure(),
+        function () {
+            logger.info(`CurrencyService gRPC server started on port ${PORT}`);
+            server.start();
+        },
+    );
 }
 
 main();

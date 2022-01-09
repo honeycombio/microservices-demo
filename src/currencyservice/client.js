@@ -15,10 +15,8 @@
  * limitations under the License.
  *
  */
-require('@google-cloud/trace-agent').start();
-
 const path = require('path');
-const grpc = require('grpc');
+const grpc = require('@grpc/grpc-js');
 const pino = require('pino');
 
 const PROTO_PATH = path.join(__dirname, './proto/demo.proto');
