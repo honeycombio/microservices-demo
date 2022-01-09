@@ -57,7 +57,7 @@ minikube start --cpus=4 --memory 4096 --disk-size 32g
 ```shell
 helm install opentelemetry-collector honeycomb/opentelemetry-collector \
       --set honeycomb.apiKey=YOUR_API_KEY \
-      --values ./kubernetes-manifests/addional_resources/opentelemetry-collector-values.yaml
+      --values ./kubernetes-manifests/additional_resources/opentelemetry-collector-values.yaml
 ```
 
 4. Run `skaffold run` (first time will be slow, it can take ~20 minutes). This will build and deploy the application. If
