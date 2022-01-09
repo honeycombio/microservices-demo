@@ -93,7 +93,7 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 		userAgent := r.UserAgent()
 		rnd := rand.Intn(100) + 1
 
-		// DEMO: If the checkoutservice Cache size is greaer than the CacheSizeThreshold (default 35000)
+		// DEMO: If the checkoutservice Cache size is greater than the CacheSizeThreshold (default 35000)
 		// AND the request is from the load generator (useragent contains python)
 		// AND rnd > PercentNormal
 		// Then we will use a session id of 20109 to emphasize a problematic user
