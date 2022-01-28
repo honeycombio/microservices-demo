@@ -8,7 +8,7 @@ const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
 
 const exporter = new CollectorTraceExporter({
-  url: 'https://microservicescollector.demo.honeycomb.io:443/v1/traces'
+  url: 'https://microservicescollector.honeydemo.io:443/v1/traces'
 });
 const provider = new WebTracerProvider({
   resource: new Resource({
