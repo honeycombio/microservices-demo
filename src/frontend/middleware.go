@@ -79,12 +79,12 @@ func ensureSessionID(next http.Handler) http.HandlerFunc {
 		userAgent := r.UserAgent()
 		rnd := rand.Intn(100) + 1
 
-		// DEMO: If the checkoutservice Cache size is greater than the CacheSizeThreshold (default 35000)
+		// DEMO: If the checkoutservice Cache size is greater than the CacheTrack.userThreshold (default 35000)
 		// AND the request is from the load generator (useragent contains python)
 		// AND rnd > PercentNormal
 		// Then we will use a session id of 20109 to emphasize a problematic user
 		// sessionID will be referenced as userid in OpenTelemetry data
-		if CurrentCacheSize > CacheSizeThreshold && strings.Contains(userAgent, "python") && rnd > PercentNormal {
+		if CacheTrack.IsOverUserThreshold() && strings.Contains(userAgent, "python") && rnd > PercentNormal {
 			// Use the static sessionID "20109"
 			sessionID = "20109"
 			http.SetCookie(w, &http.Cookie{

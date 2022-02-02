@@ -52,22 +52,29 @@ spec:
             value: "checkoutservice:5050"
           - name: AD_SERVICE_ADDR
             value: "adservice:9555"
-          - name: FORCE_USER
-            value: "0"
-          - name: PERCENT_NORMAL
-            value: "50"
-          - name: CACHE_SIZE_THRESHOLD
-            value: "35000"
           - name: ENV_PLATFORM
             value: "aws"
-          - name: OTEL_EXPORTER_OTLP_ENDPOINT
-            value: opentelemetry-collector:4317
           - name: POD_IP
             valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: opentelemetry-collector:4317
           - name: OTEL_RESOURCE_ATTRIBUTES
             value: ip=$(POD_IP)
+          - name: PERCENT_NORMAL
+            value: "85"
+          - name: CACHE_MARKER_THRESHOLD
+            value: "30000"
+          - name: CACHE_USER_THRESHOLD
+            value: "35000"
+          - name: HONEYCOMB_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: honeycomb
+                key: api-key
+          - name: HONEYCOMB_DATASET
+            value: microservices-demo
           resources:
             requests:
               cpu: 100m

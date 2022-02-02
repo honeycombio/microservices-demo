@@ -3,7 +3,7 @@
 </p>
 
 
-**[Online Boutique](https://microservices.demo.honeycomb.io)** is a cloud-native microservices demo application. Online
+**[Online Boutique](https://microservices.honeydemo.io)** is a cloud-native microservices demo application. Online
 Boutique consists of a 10-tier microservices application, writen in 5 different languages: Go, Java, .NET, Node, and
 Python. The application is a web-based e-commerce platform where users can browse items, add them to a cart, and
 purchase them.
@@ -28,14 +28,14 @@ the [src](./src) folder explains how OpenTelemetry was used with specific code e
 
 ### Prerequisites
 
-- [Docker for Desktop](https://www.docker.com/products/docker-desktop).
-- kubectl (can be installed via `gcloud components install kubectl`)
-- [skaffold]( https://skaffold.dev/docs/install/), a tool that builds and deploys Docker images in bulk.
+- [Docker for Desktop](https://www.docker.com/products/docker-desktop)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl), a CLI to interact with Kubernetes
+- [skaffold]( https://skaffold.dev/docs/install/), a tool that builds and deploys Docker images in bulk
 - [Helm](https://helm.sh), a package manager for Kubernetes
 
 ### Install
 
-1. Launch a local Kubernetes cluster with one of the following tools:
+1. Launch a local Kubernetes cluster with one of the following options:
 
 - To launch **Minikube** (tested with Ubuntu Linux). Please, ensure that the local Kubernetes cluster has at least:
     - 4 CPUs
@@ -60,8 +60,8 @@ helm install opentelemetry-collector honeycomb/opentelemetry-collector \
       --values ./kubernetes-manifests/additional_resources/opentelemetry-collector-values.yaml
 ```
 
-4. Run `skaffold run` (first time will be slow, it can take ~20 minutes). This will build and deploy the application. If
-   you need to rebuild the images automatically as you refactor the code, run `skaffold dev` command.
+4. Run `skaffold run` (first time will be slow, it can take ~20 minutes). This will build and deploy the application. 
+   If you need to rebuild the images automatically as you refactor the code, run `skaffold dev` command.
 
 5. Run `kubectl get pods` to verify the Pods are ready and running.
 
@@ -77,13 +77,11 @@ minikube service frontend-external
 
 ### Cleanup
 
-If you've deployed the application with `skaffold run` command, you can run
-`skaffold delete` to clean up the deployed resources.
+If you've deployed the application with `skaffold run` command, you can run `skaffold delete` to clean up the deployed resources.
 
 ## Architecture
 
-**Online Boutique** is composed of 10 microservices (plus a load generator) written in 5 different languages that talk
-to each other over gRPC.
+**Online Boutique** is composed of 10 microservices (plus a load generator) written in 5 different languages that communicate with each other over gRPC.
 
 [![Architecture of microservices](./docs/img/architecture-diagram.png)](./docs/img/architecture-diagram.png)
 
@@ -146,4 +144,4 @@ to quickly understand the memory leak and cache problem in code.
 
 ---
 
-This is not an official Google or Honeycomb project.
+This is not an official Honeycomb or Google project.
