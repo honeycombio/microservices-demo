@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -69,10 +68,10 @@ type frontendServer struct {
 	adSvcConn *grpc.ClientConn
 }
 
+var CacheTrack CacheTracker
 var PercentNormal = 75
-var CacheSizeThreshold int64 = 35000
-var CurrentCacheSize int64
-var CurrentCacheSizeLock sync.Mutex
+var DefaultCacheUserThreshold = 35000
+var DefaultCacheMarkerThreshold = 30000
 
 func main() {
 
@@ -97,11 +96,6 @@ func main() {
 	p, err := strconv.Atoi(os.Getenv("PERCENT_NORMAL"))
 	if err == nil {
 		PercentNormal = p
-	}
-
-	c, err := strconv.Atoi(os.Getenv("CACHE_SIZE_THRESHOLD"))
-	if err == nil {
-		CacheSizeThreshold = int64(c)
 	}
 
 	srvPort := port
@@ -150,7 +144,18 @@ func main() {
 	handler = &logHandler{log: log, next: handler} // add logging
 	handler = ensureSessionID(handler)             // add session ID
 
-	go trackCacheSize(ctx, log, svc)
+	cut, err := strconv.Atoi(os.Getenv("CACHE_USER_THRESHOLD"))
+	if err != nil {
+		cut = DefaultCacheUserThreshold
+	}
+	cmt, err := strconv.Atoi(os.Getenv("CACHE_MARKER_THRESHOLD"))
+	if err != nil {
+		cmt = DefaultCacheMarkerThreshold
+	}
+	apiKey := os.Getenv("HONEYCOMB_API_KEY")
+	dataset := os.Getenv("HONEYCOMB_DATASET")
+	CacheTrack := NewCacheTracker(cut, cmt, apiKey, dataset, log)
+	CacheTrack.Track(ctx, svc)
 
 	log.Infof("starting server on " + addr + ":" + srvPort)
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
@@ -193,22 +198,6 @@ func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.Trac
 	otel.SetTracerProvider(tp)
 
 	return tp
-}
-
-func trackCacheSize(ctx context.Context, log logrus.FieldLogger, fe *frontendServer) {
-	log.Infof("starting cache size tracker")
-	ticker := time.NewTicker(10 * time.Second)
-	for range ticker.C {
-		resp, _ := fe.getCacheSize(ctx)
-		resp, err := fe.getCacheSize(ctx)
-		if err != nil {
-			log.Error(errors.Wrapf(err, "could not fetch Cache size"))
-		}
-		CurrentCacheSizeLock.Lock()
-		CurrentCacheSize = resp.CacheSize
-		CurrentCacheSizeLock.Unlock()
-		log.Debugf("current cache size is: %d", CurrentCacheSize)
-	}
 }
 
 func mustMapEnv(target *string, envKey string) {
