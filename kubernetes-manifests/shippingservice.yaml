@@ -28,10 +28,6 @@ spec:
               fieldPath: status.podIP
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: ip=$(POD_IP)
-        - name: RAND_MIN
-          value: "10"
-        - name: RAND_MAX
-          value: "50"
         # readinessProbe:
         #   periodSeconds: 5
         #   exec:

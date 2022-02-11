@@ -1,6 +1,30 @@
 {
     "products": [
         {
+            "id": "16BEE20109",
+            "name": "Honeybee Plush",
+            "description": "Adorable plush toy that wants to be snuggled like any other fuzzy.",
+            "picture": "/static/img/products/bee-plush.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 29,
+                "nanos": 790000000
+            },
+            "categories": ["toy"]
+        },
+        {
+            "id": "999SLO4D20",
+            "name": "20 sided die",
+            "description": "The ultimate observability quest tool.",
+            "picture": "/static/img/products/d20.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 15,
+                "nanos": 200000000
+            },
+            "categories": ["game"]
+        },
+        {
             "id": "OLJCESPC7Z",
             "name": "Vintage Typewriter",
             "description": "This typewriter looks good in your living room.",
@@ -34,6 +58,18 @@
                 "units": 124
             },
             "categories": ["cookware"]
+        },
+        {
+            "id": "DG9ZAG9RCG",
+            "name": "Toshok has a Branch",
+            "description": "An original 'Toshok has a Branch for that' t-shirt.",
+            "picture": "/static/img/products/toshok-branch.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 34,
+                "nanos": 980000000
+            },
+            "categories": ["game"]
         },
         {
             "id": "L9ECAV7KIM",

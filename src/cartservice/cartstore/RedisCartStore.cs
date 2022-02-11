@@ -193,5 +193,10 @@ namespace cartservice.cartstore
                 return false;
             }
         }
+
+        public ConnectionMultiplexer GetRedisMultiplexer()
+        {
+            return redis;
+        }
     }
 }

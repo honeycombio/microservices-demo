@@ -68,10 +68,10 @@ type frontendServer struct {
 	adSvcConn *grpc.ClientConn
 }
 
-var CacheTrack CacheTracker
+var CacheTrack *CacheTracker
 var PercentNormal = 75
-var DefaultCacheUserThreshold = 35000
-var DefaultCacheMarkerThreshold = 30000
+var CacheUserThreshold = 35000
+var CacheMarkerThreshold = 30000
 
 func main() {
 
@@ -97,6 +97,17 @@ func main() {
 	if err == nil {
 		PercentNormal = p
 	}
+	cut, err := strconv.Atoi(os.Getenv("CACHE_USER_THRESHOLD"))
+	if err == nil {
+		CacheUserThreshold = cut
+	}
+	cmt, err := strconv.Atoi(os.Getenv("CACHE_MARKER_THRESHOLD"))
+	if err == nil {
+		CacheMarkerThreshold = cmt
+	}
+	apiKey := os.Getenv("HONEYCOMB_API_KEY")
+	dataset := os.Getenv("HONEYCOMB_DATASET")
+	CacheTrack = NewCacheTracker(CacheUserThreshold, CacheMarkerThreshold, apiKey, dataset, log)
 
 	srvPort := port
 	if os.Getenv("PORT") != "" {
@@ -144,17 +155,6 @@ func main() {
 	handler = &logHandler{log: log, next: handler} // add logging
 	handler = ensureSessionID(handler)             // add session ID
 
-	cut, err := strconv.Atoi(os.Getenv("CACHE_USER_THRESHOLD"))
-	if err != nil {
-		cut = DefaultCacheUserThreshold
-	}
-	cmt, err := strconv.Atoi(os.Getenv("CACHE_MARKER_THRESHOLD"))
-	if err != nil {
-		cmt = DefaultCacheMarkerThreshold
-	}
-	apiKey := os.Getenv("HONEYCOMB_API_KEY")
-	dataset := os.Getenv("HONEYCOMB_DATASET")
-	CacheTrack := NewCacheTracker(cut, cmt, apiKey, dataset, log)
 	CacheTrack.Track(ctx, svc)
 
 	log.Infof("starting server on " + addr + ":" + srvPort)

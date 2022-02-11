@@ -19,7 +19,10 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from random import randint
+from random import (
+    randint,
+    random,
+)
 from time import sleep
 
 from logger import getJSONLogger
@@ -32,6 +35,8 @@ env = Environment(
 )
 template = env.get_template('confirmation.html')
 
+tracer = trace.get_tracer(__name__)
+
 
 class BaseEmailService(demo_pb2_grpc.EmailServiceServicer):
     def Check(self, request, context):
@@ -41,7 +46,10 @@ class BaseEmailService(demo_pb2_grpc.EmailServiceServicer):
 
 class DummyEmailService(BaseEmailService):
     def SendOrderConfirmation(self, request, context):
-        sleep(randint(10, 250) / 1000)
+        time.sleep(randint(10, 150) / 1000)
+        mock_database_call(100,
+                           "INSERT email.confirmations",
+                           "INSERT INFO confirmations (email, order_id, order_date) VALUES(?, ?, ?)")
 
         email = request.email
         order = request.order
@@ -69,6 +77,28 @@ class HealthCheck():
     def Check(self, request, context):
         return health_pb2.HealthCheckResponse(
             status=health_pb2.HealthCheckResponse.SERVING)
+
+
+def get_random_wait_time(max_time, buckets):
+    num = 0
+    val = max_time / buckets
+    for i in range(buckets):
+        num += random() * val
+
+    return num
+
+
+def sleep_random(max_time):
+    rnd = get_random_wait_time(max_time, 4)
+    time.sleep(rnd / 1000)
+
+
+def mock_database_call(max_time, name, query):
+    with tracer.start_as_current_span(name) as span:
+        # span = trace.get_current_span()
+        span.set_attribute("db.statement", query)
+        span.set_attribute("db.name", "email")
+        sleep_random(max_time)
 
 
 def start():

@@ -1,18 +1,8 @@
-function sleep(wait_time) {
-    // mock some work by sleeping
-    return new Promise((resolve, reject) => {
-        setTimeout(resolve, wait_time);
-    })
-}
-
-function getRandomInt(max) {
-    return Math.floor(Math.random() * max) + 1;
-}
-
 const path = require('path');
 const grpc = require('@grpc/grpc-js');
 const pino = require('pino');
 const protoLoader = require('@grpc/proto-loader');
+const opentelemetry = require('@opentelemetry/api');
 
 const MAIN_PROTO_PATH = path.join(__dirname, './proto/demo.proto');
 const HEALTH_PROTO_PATH = path.join(__dirname, './proto/grpc/health/v1/health.proto');
@@ -28,6 +18,31 @@ const logger = pino({
     changeLevelName: 'severity',
     useLevelLabels: true
 });
+
+function getRandomWaitTime(max, buckets) {
+    let num = 0;
+    const val = max / buckets;
+    for (let i = 0; i < buckets; i++) {
+        num += Math.random() * val;
+    }
+    return num;
+}
+
+function sleepRandom(max) {
+    const rnd = getRandomWaitTime(max, 4);
+    return new Promise((resolve, reject) => {
+        setTimeout(resolve, rnd);
+    })
+}
+
+async function mockDatabaseCall(maxTime, name, query) {
+    const tracer = opentelemetry.trace.getTracer("");
+    const span = tracer.startSpan(name);
+    span.setAttribute("db.statement", query);
+    span.setAttribute("db.name", "currency");
+    await sleepRandom(maxTime);
+    span.end();
+}
 
 /**
  * Helper function that loads a protobuf file.
@@ -70,7 +85,7 @@ function _carry(amount) {
  * Lists the supported currencies
  */
 async function getSupportedCurrencies(call, callback) {
-    await sleep(getRandomInt(100));
+    await mockDatabaseCall(100, "SELECT currency.currencies", "SELECT * FROM currencies");
     logger.info('Getting supported currencies...');
     _getCurrencyData((data) => {
         callback(null, {currency_codes: Object.keys(data)});
@@ -81,7 +96,7 @@ async function getSupportedCurrencies(call, callback) {
  * Converts between currencies
  */
 async function convert(call, callback) {
-    await sleep(getRandomInt(100));
+    await mockDatabaseCall(100, "SELECT currency.rates", "SELECT rate FROM rates WHERE source_rate = ? AND target_rate = ?");
     logger.info('received conversion request');
     try {
         _getCurrencyData((data) => {
