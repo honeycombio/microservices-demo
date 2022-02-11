@@ -6,7 +6,10 @@ from concurrent import futures
 
 import grpc
 
-from random import randint
+from random import (
+    random,
+    sample,
+)
 from time import sleep
 
 import demo_pb2
@@ -29,12 +32,37 @@ logger = getJSONLogger('recommendationservice-server')
 
 worker_pool = futures.ThreadPoolExecutor(max_workers=10)
 
+tracer = trace.get_tracer(__name__)
+
+
+def get_random_wait_time(max_time, buckets):
+    num = 0
+    val = max_time / buckets
+    for i in range(buckets):
+        num += random() * val
+
+    return num
+
+
+def sleep_random(max_time):
+    rnd = get_random_wait_time(max_time, 4)
+    time.sleep(rnd / 1000)
+
+
+def mock_database_call(max_time, name, query):
+    with tracer.start_as_current_span(name) as span:
+        # span = trace.get_current_span()
+        span.set_attribute("db.statement", query)
+        span.set_attribute("db.name", "recommendation")
+        sleep_random(max_time)
+
 
 class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
     def ListRecommendations(self, request, context):
-        tracer = trace.get_tracer(__name__)
         with tracer.start_as_current_span("ListRecommendationsFunction"):
-            sleep(randint(10, 250) / 1000)
+            mock_database_call(250,
+                               "SELECT recommendation.products",
+                               "SELECT * FROM products WHERE category IN (?)")
 
             span = trace.get_current_span()
             span.set_attribute("active_threads", len(worker_pool._threads))
@@ -49,7 +77,7 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
             num_return = min(max_responses, num_products)
 
             # sample list of indicies to return
-            indices = random.sample(range(num_products), num_return)
+            indices = sample(range(num_products), num_return)
 
             # fetch product ids from indices
             prod_list = [filtered_products[i] for i in indices]

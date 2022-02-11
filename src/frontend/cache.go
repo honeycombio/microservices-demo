@@ -5,6 +5,7 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -21,6 +22,13 @@ type CacheTracker struct {
 }
 
 func NewCacheTracker(userThreshold, markerThreshold int, apiKey, dataset string, log logrus.FieldLogger) *CacheTracker {
+	log.WithFields(logrus.Fields{
+		"userThreshold":    userThreshold,
+		"markerThreshold":  markerThreshold,
+		"honeycombAPIKey":  "redacted",
+		"honeycombDataset": dataset,
+	}).Debug("Creating Cache Tracker")
+
 	return &CacheTracker{
 		userThreshold:    userThreshold,
 		markerThreshold:  markerThreshold,
@@ -28,10 +36,6 @@ func NewCacheTracker(userThreshold, markerThreshold int, apiKey, dataset string,
 		honeycombDataset: dataset,
 		log:              log,
 	}
-}
-
-func (c *CacheTracker) GetSize() int {
-	return c.currentSize
 }
 
 func (c *CacheTracker) IsOverUserThreshold() bool {
@@ -46,10 +50,12 @@ func (c *CacheTracker) Track(ctx context.Context, fe *frontendServer) {
 			resp, err := fe.getCacheSize(ctx)
 			if err != nil {
 				c.log.Error(errors.Wrap(err, "could not fetch cache size"))
-				return
+				continue
 			}
 			c.updateSize(int(resp.CacheSize))
-			c.log.Debugf("current cache size is: %d", c.currentSize)
+			c.log.WithFields(logrus.Fields{
+				"currentSize": c.currentSize,
+			}).Debug("fetched cache size")
 		}
 	}()
 }
@@ -58,7 +64,12 @@ func (c *CacheTracker) updateSize(newSize int) {
 	c.lock.Lock()
 
 	if newSize > c.markerThreshold && c.currentSize <= c.markerThreshold {
-		c.log.Debugf("marker threshold: %d has been reached, new size: %d", c.markerThreshold, newSize)
+		c.log.WithFields(logrus.Fields{
+			"currentSize":     c.currentSize,
+			"markerThreshold": c.markerThreshold,
+			"newSize":         newSize,
+		}).Debug("cache marker threshold reached")
+
 		// Send a marker in a new Go routine
 		go c.createMarker()
 	}
@@ -89,8 +100,12 @@ func (c *CacheTracker) createMarker() {
 
 	if err != nil {
 		c.log.Error(errors.Wrap(err, "could not create Honeycomb marker"))
-	} else if resp.StatusCode != 200 {
-		c.log.Errorf("Invalid status code: %d, when creating Honeycomb marker", resp.StatusCode)
+	} else if resp.StatusCode != 200 && resp.StatusCode != 201 {
+		c.log.WithFields(logrus.Fields{
+			"satusCode": resp.StatusCode,
+		}).Error("Invalid status code when creating Honeycomb marker")
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		c.log.Error(string(bodyBytes))
 	} else {
 		c.log.Debug("Honeycomb marker created.")
 	}

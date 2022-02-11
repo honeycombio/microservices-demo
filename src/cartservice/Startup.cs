@@ -1,19 +1,15 @@
 using System;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using cartservice.cartstore;
 using cartservice.services;
-using OpenTelemetry;
-using Grpc.Core;
-using Grpc.Net.Client;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using StackExchange.Redis;
 using System.Collections.Generic;
 namespace cartservice
 {
@@ -30,6 +26,17 @@ namespace cartservice
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+
+            string redisAddress = Configuration["REDIS_ADDR"];
+            RedisCartStore cartStore = null;
+            cartStore = new RedisCartStore(redisAddress);
+ 
+            // Initialize the redis store
+            cartStore.InitializeAsync().GetAwaiter().GetResult();
+            Console.WriteLine("Initialization completed");
+
+            ConnectionMultiplexer redis = cartStore.GetRedisMultiplexer();
+
             // Get the Service name and OTLP endpoint that will be used for OpenTelemetry
             string servicename = Environment.GetEnvironmentVariable("SERVICE_NAME");
             string otlpendpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
@@ -49,30 +56,12 @@ namespace cartservice
                     .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(servicename).AddAttributes(attributes))
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
+                    .AddRedisInstrumentation(redis)
                     .AddOtlpExporter(otlpOptions =>
                     {
                         otlpOptions.Endpoint = new Uri(otlpendpoint);
-                        var headers = new Grpc.Core.Metadata();
-                        otlpOptions.Headers = headers;
                     }));
             }
-
-            string redisAddress = Configuration["REDIS_ADDR"];
-            ICartStore cartStore = null;
-            if (!string.IsNullOrEmpty(redisAddress))
-            {
-                cartStore = new RedisCartStore(redisAddress);
-            }
-            else
-            {
-                Console.WriteLine("Redis cache host(hostname+port) was not specified. Starting a cart service using local store");
-                Console.WriteLine("If you wanted to use Redis Cache as a backup store, you should provide its address via command line or REDIS_ADDR environment variable.");
-                cartStore = new LocalCartStore();
-            }
-
-            // Initialize the redis store
-            cartStore.InitializeAsync().GetAwaiter().GetResult();
-            Console.WriteLine("Initialization completed");
 
             services.AddSingleton<ICartStore>(cartStore);
 

@@ -2,7 +2,11 @@ package msdemo;
 
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Iterables;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
 import msdemo.Demo.Ad;
 import msdemo.Demo.AdRequest;
 import msdemo.Demo.AdResponse;
@@ -67,8 +71,32 @@ public final class AdService {
         healthMgr.setStatus("", ServingStatus.SERVING);
     }
 
-    private static long random_int(int Min, int Max) {
-        return (long) (Math.random() * (Max - Min)) + Min;
+    private static float getRandomWaitTime(int max, int buckets) {
+        float num = 0;
+        float val = max / (float)buckets;
+        for (int i = 0; i < buckets; i++) {
+            num += Math.random() * val;
+        }
+        return num;
+    }
+
+    private static void sleepRandom(int max) {
+        float rnd = getRandomWaitTime(max, 4);
+        try {
+            Thread.sleep((long) rnd);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void mockDatabaseCall(int maxTime, String name, String query) {
+        Tracer tracer = GlobalOpenTelemetry.getTracer("");
+        Span span = tracer.spanBuilder(name).startSpan();
+        span.makeCurrent();
+        span.setAttribute("db.statement", query);
+        span.setAttribute("db.name", "ads");
+        sleepRandom(maxTime);
+        span.end();
     }
 
     private void stop() {
@@ -100,8 +128,7 @@ public final class AdService {
                 span.setAttribute("method", "getAds");
                 span.setAttribute("context_keys", req.getContextKeysList().toString());
 
-                //wait 50 to 200ms;
-                Thread.sleep(AdService.random_int(50, 200)); // For example
+                mockDatabaseCall(125, "SELECT ads.ads", "SELECT * from ads WHERE context_words LIKE ?");
 
                 List<Ad> allAds = new ArrayList<>();
                 logger.info("received ad request (context_words=" + req.getContextKeysList() + ")");
@@ -140,9 +167,6 @@ public final class AdService {
                 span.setStatus(StatusCode.ERROR);
                 responseObserver.onError(e);
 
-            } catch (InterruptedException e) {
-                span.setStatus(StatusCode.ERROR);
-                responseObserver.onError(e);
             }
         }
     }

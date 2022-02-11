@@ -2,6 +2,7 @@ const path = require('path');
 const grpc = require('@grpc/grpc-js');
 const pino = require('pino');
 const protoLoader = require('@grpc/proto-loader');
+const opentelemetry = require('@opentelemetry/api');
 
 const charge = require('./charge');
 
@@ -12,17 +13,30 @@ const logger = pino({
     useLevelLabels: true
 });
 
-function sleep(wait_time) {
-    // mock some work by sleeping
+function getRandomWaitTime(max, buckets) {
+    let num = 0;
+    const val = max / buckets;
+    for (let i = 0; i < buckets; i++) {
+        num += Math.random() * val;
+    }
+    return num;
+}
+
+function sleepRandom(max) {
+    const rnd = getRandomWaitTime(max, 4);
     return new Promise((resolve, reject) => {
-        setTimeout(resolve, wait_time);
+        setTimeout(resolve, rnd);
     })
 }
 
-function getRandomInt(max) {
-    return Math.floor(Math.random() * max) + 1;
+async function mockDatabaseCall(maxTime, name, query) {
+    const tracer = opentelemetry.trace.getTracer("");
+    const span = tracer.startSpan(name);
+    span.setAttribute("db.statement", query);
+    span.setAttribute("db.name", "payment");
+    await sleepRandom(maxTime);
+    span.end();
 }
-
 
 class MicroservicesDemoServer {
     constructor(protoRoot, port = MicroservicesDemoServer.PORT) {
@@ -43,7 +57,8 @@ class MicroservicesDemoServer {
      * @param {*} callback  fn(err, ChargeResponse)
      */
     static async ChargeServiceHandler(call, callback) {
-        await sleep(getRandomInt(100));
+        await sleepRandom(75);
+        await mockDatabaseCall(30, "INSERT payment.charges", "INSERT INTO charges (amount, card_hash, card_type, last_4) VALUES (?, ?, ?, ?)");
         try {
             logger.info(`PaymentService#Charge invoked with request ${JSON.stringify(call.request)}`);
             const response = charge(call.request);

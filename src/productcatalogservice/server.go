@@ -5,18 +5,19 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"go.opentelemetry.io/otel/trace"
 	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -44,20 +45,6 @@ var (
 
 	reloadCatalog bool
 )
-
-func randWait() {
-	rand.Seed(time.Now().UnixNano())
-	min, err := strconv.Atoi(os.Getenv("RAND_MIN"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	max, err := strconv.Atoi(os.Getenv("RAND_MAX"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	rnd := rand.Intn(max-min+1) + min
-	time.Sleep(time.Duration(rnd) * time.Millisecond)
-}
 
 func init() {
 	log = logrus.New()
@@ -185,7 +172,9 @@ func readCatalogFile(catalog *pb.ListProductsResponse) error {
 		return err
 	}
 	log.Info("successfully parsed product catalog json")
-	randWait()
+
+	sleepRandom(50)
+
 	return nil
 }
 
@@ -199,6 +188,30 @@ func parseCatalog() []*pb.Product {
 	return cat.Products
 }
 
+func getRandomWaitTime(max int, buckets int) float32 {
+	num := float32(0)
+	val := float32(max / buckets)
+	for i := 0; i < buckets; i++ {
+		num += rand.Float32() * val
+	}
+	return num
+}
+
+func sleepRandom(max int) {
+	rnd := getRandomWaitTime(max, 4)
+	time.Sleep((time.Duration(rnd)) * time.Millisecond)
+}
+
+func mockDatabaseCall(ctx context.Context, maxTime int, name, query string) {
+	tracer := otel.GetTracerProvider().Tracer("")
+	ctx, span := tracer.Start(ctx, name)
+	span.SetAttributes(attribute.String("db.statement", query),
+		attribute.String("db.name", "productcatalog"))
+	defer span.End()
+
+	sleepRandom(maxTime)
+}
+
 func (p *productCatalog) Check(_ context.Context, _ *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
 	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
 }
@@ -207,13 +220,17 @@ func (p *productCatalog) Watch(_ *healthpb.HealthCheckRequest, _ healthpb.Health
 	return status.Errorf(codes.Unimplemented, "health check via Watch not implemented")
 }
 
-func (p *productCatalog) ListProducts(context.Context, *pb.Empty) (*pb.ListProductsResponse, error) {
-	randWait()
+func (p *productCatalog) ListProducts(ctx context.Context, _ *pb.Empty) (*pb.ListProductsResponse, error) {
+	mockDatabaseCall(ctx, 40, "SELECT productcatalog.products", "SELECT * FROM products")
 	return &pb.ListProductsResponse{Products: parseCatalog()}, nil
 }
 
-func (p *productCatalog) GetProduct(_ context.Context, req *pb.GetProductRequest) (*pb.Product, error) {
-	randWait()
+func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.Product, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("productid", req.GetId()))
+
+	mockDatabaseCall(ctx, 30, "SELECT productcatalog.products", "SELECT * FROM products WHERE product_id = ?")
+
 	var found *pb.Product
 	for i := 0; i < len(parseCatalog()); i++ {
 		if req.Id == parseCatalog()[i].Id {
@@ -226,8 +243,9 @@ func (p *productCatalog) GetProduct(_ context.Context, req *pb.GetProductRequest
 	return found, nil
 }
 
-func (p *productCatalog) SearchProducts(_ context.Context, req *pb.SearchProductsRequest) (*pb.SearchProductsResponse, error) {
-	randWait()
+func (p *productCatalog) SearchProducts(ctx context.Context, req *pb.SearchProductsRequest) (*pb.SearchProductsResponse, error) {
+	mockDatabaseCall(ctx, 50, "SELECT productcatalog.products", "SELECT * FROM products WHERE name LIKE ? OR description LIKE ?")
+
 	// Interpret query as a substring match in name or description.
 	var ps []*pb.Product
 	for _, p := range parseCatalog() {

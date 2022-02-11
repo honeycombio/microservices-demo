@@ -107,20 +107,6 @@ func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.Trac
 	return tp
 }
 
-func randWait() {
-	rand.Seed(time.Now().UnixNano())
-	min, err := strconv.Atoi(os.Getenv("RAND_MIN"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	max, err := strconv.Atoi(os.Getenv("RAND_MAX"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	rnd := rand.Intn(max-min+1) + min
-	time.Sleep(time.Duration(rnd) * time.Millisecond)
-}
-
 func main() {
 	// Initialize OpenTelemetry Tracing
 	ctx := context.Background()
@@ -279,37 +265,40 @@ type orderPrep struct {
 	shippingCostLocalized *pb.Money
 }
 
-func getRandomData(max int, peak int) float32 {
+func getRandomWaitTime(max int, buckets int) float32 {
 	num := float32(0)
-	for i := 0; i < peak; i++ {
-		num += rand.Float32() * float32(max/peak)
+	val := float32(max / buckets)
+	for i := 0; i < buckets; i++ {
+		num += rand.Float32() * val
 	}
 	return num
 }
 
-func mockDatabaseCall(ctx context.Context, expectedTime int) {
-	tracer := otel.GetTracerProvider().Tracer("")
-	ctx, span := tracer.Start(ctx, "SQL SELECT")
-	var (
-		queryKey = attribute.Key("db.query")
-	)
-	span.SetAttributes(queryKey.String("select * from discounts where user = ?"))
-	defer span.End()
-	rnd := getRandomData(expectedTime, 4)
-
+func sleepRandom(max int) {
+	rnd := getRandomWaitTime(max, 4)
 	time.Sleep((time.Duration(rnd)) * time.Millisecond)
 }
 
-func loadDiscountFromDatabase(ctx context.Context, cachesize int) string {
+func mockDatabaseCall(ctx context.Context, maxTime int, name, query string) {
+	tracer := otel.GetTracerProvider().Tracer("")
+	ctx, span := tracer.Start(ctx, name)
+	span.SetAttributes(attribute.String("db.statement", query),
+		attribute.String("db.name", "checkout"))
+	defer span.End()
 
-	rnd := float64(cachesize / 5000)
+	sleepRandom(maxTime)
+}
+
+func loadDiscountFromDatabase(ctx context.Context, cachesize int) string {
+	rnd := float64(cachesize / 6000)
 	expectedTime := math.Pow(rnd, 4)
-	numCalls := int(expectedTime / 200)
-	for i := 1; i < numCalls; i++ {
-		mockDatabaseCall(ctx, 100)
+	numCalls := int(math.Max(1, expectedTime/200))
+	for i := 0; i < numCalls; i++ {
+		mockDatabaseCall(ctx, 250, "SELECT checkout.discounts", "SELECT * FROM discounts WHERE user = ?")
 	}
 
-	return "10"
+	discount := rand.Intn(20)
+	return strconv.Itoa(discount)
 }
 
 func getDiscounts(ctx context.Context, u string, cachesize int) string {
@@ -324,7 +313,7 @@ func getDiscounts(ctx context.Context, u string, cachesize int) string {
 	if (u == "20109" && rnd < 0.5) || (rnd < 0.25) {
 		return loadDiscountFromDatabase(ctx, cachesize)
 	} else {
-		return ""
+		return loadDiscountFromDatabase(ctx, 0)
 	}
 
 }
@@ -357,7 +346,7 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 	out.shippingCostLocalized = shippingPrice
 	out.cartItems = cartItems
 	out.orderItems = orderItems
-	randWait()
+	sleepRandom(25)
 	return out, nil
 }
 
@@ -382,7 +371,7 @@ func (cs *checkoutService) quoteShipping(ctx context.Context, address *pb.Addres
 	if err != nil {
 		return nil, fmt.Errorf("failed to get shipping quote: %+v", err)
 	}
-	randWait()
+	sleepRandom(40)
 	return shippingQuote.GetCostUsd(), nil
 }
 
@@ -410,7 +399,7 @@ func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*p
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cart during checkout: %+v", err)
 	}
-	randWait()
+	sleepRandom(40)
 	return cart.GetItems(), nil
 }
 
@@ -430,7 +419,7 @@ func (cs *checkoutService) emptyUserCart(ctx context.Context, userID string) err
 	if _, err = pb.NewCartServiceClient(conn).EmptyCart(ctx, &pb.EmptyCartRequest{UserId: userID}); err != nil {
 		return fmt.Errorf("failed to empty user cart during checkout: %+v", err)
 	}
-	randWait()
+	sleepRandom(20)
 	return nil
 }
 
@@ -463,7 +452,7 @@ func (cs *checkoutService) prepOrderItems(ctx context.Context, items []*pb.CartI
 			Item: item,
 			Cost: price}
 	}
-	randWait()
+	sleepRandom(30)
 	return out, nil
 }
 
@@ -485,7 +474,7 @@ func (cs *checkoutService) convertCurrency(ctx context.Context, from *pb.Money, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert currency: %+v", err)
 	}
-	randWait()
+	sleepRandom(20)
 	return result, err
 }
 
@@ -508,7 +497,7 @@ func (cs *checkoutService) chargeCard(ctx context.Context, amount *pb.Money, pay
 	if err != nil {
 		return "", fmt.Errorf("could not charge the card: %+v", err)
 	}
-	randWait()
+	sleepRandom(50)
 	return paymentResp.GetTransactionId(), nil
 }
 
@@ -527,7 +516,7 @@ func (cs *checkoutService) sendOrderConfirmation(ctx context.Context, email stri
 	_, err = pb.NewEmailServiceClient(conn).SendOrderConfirmation(ctx, &pb.SendOrderConfirmationRequest{
 		Email: email,
 		Order: order})
-	randWait()
+	sleepRandom(30)
 	return err
 }
 
@@ -549,6 +538,6 @@ func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, i
 	if err != nil {
 		return "", fmt.Errorf("shipment failed: %+v", err)
 	}
-	randWait()
+	sleepRandom(25)
 	return resp.GetTrackingId(), nil
 }
