@@ -65,7 +65,7 @@ spec:
           - name: PERCENT_NORMAL
             value: "85"
           - name: CACHE_MARKER_THRESHOLD
-            value: "30000"
+            value: "26000"
           - name: CACHE_USER_THRESHOLD
             value: "35000"
           - name: HONEYCOMB_API_KEY
