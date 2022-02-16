@@ -3,12 +3,13 @@ package main
 import (
 	"bytes"
 	"context"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 type CacheTracker struct {
@@ -87,7 +88,7 @@ func (c *CacheTracker) createMarker() {
 	c.log.Debug("Creating Honeycomb marker...")
 
 	url := "https://api.honeycomb.io/1/markers/" + c.honeycombDataset
-	payload := []byte(`{"message":"Deploy C34E68A7","type":"deploy"}`)
+	payload := []byte(`{"message":"Deploy C34E68A7", "url":"https://github.com/honeycombio/microservices-demo/commit/36bbbc36afebf145a992a7446554fb5371be149f", "type":"deploy"}`)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
 	if err != nil {
 		c.log.Error(errors.Wrap(err, "could not create request to generate marker"))
