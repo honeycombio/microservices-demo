@@ -240,8 +240,6 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		return nil, status.Errorf(codes.Unavailable, "shipping error: %+v", err)
 	}
 
-	_ = cs.emptyUserCart(ctx, req.UserId)
-
 	orderResult := &pb.OrderResult{
 		OrderId:            orderID.String(),
 		ShippingTrackingId: shippingTrackingID,
@@ -250,11 +248,25 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		Items:              prep.orderItems,
 	}
 
-	if err := cs.sendOrderConfirmation(ctx, req.Email, orderResult); err != nil {
-		log.Warnf("failed to send order confirmation to %q: %+v", req.Email, err)
-	} else {
-		log.Infof("order confirmation email sent to %q", req.Email)
-	}
+	// empty cart async
+	go func() {
+		ctx := trace.ContextWithSpan(context.Background(), span)
+		err := cs.emptyUserCart(ctx, req.UserId)
+		if err != nil {
+
+		}
+	}()
+
+	// send order confirmation async
+	go func() {
+		ctx := trace.ContextWithSpan(context.Background(), span)
+		if err := cs.sendOrderConfirmation(ctx, req.Email, orderResult); err != nil {
+			log.Warnf("failed to send order confirmation to %q: %+v", req.Email, err)
+		} else {
+			log.Infof("order confirmation email sent to %q", req.Email)
+		}
+	}()
+
 	resp := &pb.PlaceOrderResponse{Order: orderResult}
 	return resp, nil
 }

@@ -229,7 +229,8 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("productid", req.GetId()))
 
-	mockDatabaseCall(ctx, 30, "SELECT productcatalog.products", "SELECT * FROM products WHERE product_id = ?")
+	//mockDatabaseCall(ctx, 30, "SELECT productcatalog.products", "SELECT * FROM products WHERE product_id = ?")
+	sleepRandom(30)
 
 	var found *pb.Product
 	for i := 0; i < len(parseCatalog()); i++ {

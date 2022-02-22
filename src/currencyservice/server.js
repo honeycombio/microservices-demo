@@ -85,7 +85,9 @@ function _carry(amount) {
  * Lists the supported currencies
  */
 async function getSupportedCurrencies(call, callback) {
-    await mockDatabaseCall(100, "SELECT currency.currencies", "SELECT * FROM currencies");
+    //await mockDatabaseCall(100, "SELECT currency.currencies", "SELECT * FROM currencies");
+    await sleepRandom(20)
+
     logger.info('Getting supported currencies...');
     _getCurrencyData((data) => {
         callback(null, {currency_codes: Object.keys(data)});
