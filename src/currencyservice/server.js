@@ -98,7 +98,9 @@ async function getSupportedCurrencies(call, callback) {
  * Converts between currencies
  */
 async function convert(call, callback) {
-    await mockDatabaseCall(100, "SELECT currency.rates", "SELECT rate FROM rates WHERE source_rate = ? AND target_rate = ?");
+    //await mockDatabaseCall(100, "SELECT currency.rates", "SELECT rate FROM rates WHERE source_rate = ? AND target_rate = ?");
+    await sleepRandom(30)
+
     logger.info('received conversion request');
     try {
         _getCurrencyData((data) => {
