@@ -46,6 +46,8 @@ spec:
                 fieldPath: status.podIP
           - name: OTEL_RESOURCE_ATTRIBUTES
             value: ip=$(POD_IP)
+          - name: CACHE_USER_THRESHOLD
+            value: "35000"
           resources:
             requests:
               cpu: 100m

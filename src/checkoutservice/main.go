@@ -36,6 +36,7 @@ const (
 )
 
 var requestCache = cache.New(5*time.Minute, 10*time.Minute)
+var cacheUserThreshold = 35000
 var log *logrus.Logger
 
 type OrderCache struct {
@@ -112,6 +113,11 @@ func main() {
 	ctx := context.Background()
 	tp := initOtelTracing(ctx, log)
 	defer func() { _ = tp.Shutdown(ctx) }()
+
+	cut, err := strconv.Atoi(os.Getenv("CACHE_USER_THRESHOLD"))
+	if err == nil {
+		cacheUserThreshold = cut
+	}
 
 	port := listenPort
 	if os.Getenv("PORT") != "" {
@@ -192,8 +198,9 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		Currency:  req.UserCurrency,
 	}
 
-	//Okay we need to fake some problems some how...
-	for i := 0; i < 10; i++ {
+	// Okay we need to fake some problems some how...
+	cacheIncrease := determineCacheIncrease(requestCache.ItemCount())
+	for i := 0; i < cacheIncrease; i++ {
 		requestCache.Set(requestID+strconv.Itoa(i), ordCache, cache.NoExpiration)
 	}
 	cachesize := requestCache.ItemCount()
@@ -275,6 +282,22 @@ type orderPrep struct {
 	orderItems            []*pb.OrderItem
 	cartItems             []*pb.CartItem
 	shippingCostLocalized *pb.Money
+}
+
+func determineCacheIncrease(curSize int) int {
+	if curSize < cacheUserThreshold {
+		// random number between 8 and 9
+		return rand.Intn(2) + 8
+	} else {
+		// we want to go from 9 to 20 (spread of 11) proportionately as we increase to our max of 54000
+		max := 54000
+		spread := max - cacheUserThreshold
+		pos := curSize - cacheUserThreshold
+		rndOffset := float64(pos) / float64(spread) * 10
+
+		// proportional increase + base (9) + random offset (which is also proportional to increase)
+		return ((pos * 11) / spread) + 9 + rand.Intn(int(rndOffset)+1)
+	}
 }
 
 func getRandomWaitTime(max int, buckets int) float32 {
