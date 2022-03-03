@@ -222,6 +222,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		return nil, status.Errorf(codes.Internal, "failed to generate order uuid")
 	}
 
+	// Prepare Order
 	prep, err := cs.prepareOrderItemsAndShippingQuoteFromCart(ctx, req.UserId, req.UserCurrency, req.Address, cachesize)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
@@ -235,17 +236,36 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		multPrice := money.MultiplySlow(*it.Cost, uint32(it.GetItem().GetQuantity()))
 		total = money.Must(money.Sum(total, multPrice))
 	}
+	span.AddEvent("prepared", trace.WithAttributes(
+		orderIDKey.String(orderID.String()),
+		userIDKey.String(userID),
+		attribute.String("currency", req.UserCurrency),
+	))
 
+	// Charge Card
 	txID, err := cs.chargeCard(ctx, &total, req.CreditCard)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to charge card: %+v", err)
 	}
 	log.Infof("payment went through (transaction_id: %s)", txID)
+	amt := float64(total.Units) + (float64(total.Nanos) / 100)
+	span.AddEvent("charged", trace.WithAttributes(
+		orderIDKey.String(orderID.String()),
+		userIDKey.String(userID),
+		attribute.String("currency", req.UserCurrency),
+		attribute.Float64("chargeTotal", amt),
+	))
 
+	// Ship Order
 	shippingTrackingID, err := cs.shipOrder(ctx, req.Address, prep.cartItems)
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "shipping error: %+v", err)
 	}
+	span.AddEvent("shipped", trace.WithAttributes(
+		orderIDKey.String(orderID.String()),
+		userIDKey.String(userID),
+		attribute.Int("itemCount", len(prep.cartItems)),
+	))
 
 	orderResult := &pb.OrderResult{
 		OrderId:            orderID.String(),
@@ -325,7 +345,7 @@ func mockDatabaseCall(ctx context.Context, maxTime int, name, query string) {
 }
 
 func loadDiscountFromDatabase(ctx context.Context, cachesize int) string {
-	numCalls := math.Max(1, math.Pow(float64(cachesize)/6000, 4)/200)
+	numCalls := math.Max(1, math.Pow(float64(cachesize)/6000, 4)/400)
 	for i := float64(0); i < numCalls; i++ {
 		mockDatabaseCall(ctx, 250, "SELECT checkout.discounts", "SELECT * FROM discounts WHERE user = ?")
 	}
