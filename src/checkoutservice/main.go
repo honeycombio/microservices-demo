@@ -387,6 +387,13 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 		log.Infof(fmt.Sprintf("Got a discount: %v.", discount))
 	}
 
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("discounted", trace.WithAttributes(
+		attribute.String("userId", userID),
+		attribute.String("currency", userCurrency),
+		attribute.String("discount", discount),
+	))
+
 	shippingUSD, err := cs.quoteShipping(ctx, address, cartItems)
 	if err != nil {
 		return out, fmt.Errorf("shipping quote failure: %+v", err)
