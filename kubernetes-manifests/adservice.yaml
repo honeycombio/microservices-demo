@@ -27,6 +27,8 @@ spec:
               fieldPath: status.podIP
         - name: HONEYCOMB_API_ENDPOINT
           value: http://opentelemetry-collector:4317
+        - name: HONEYCOMB_METRICS_DATASET
+          value: microservices-metrics
         - name: SERVICE_NAME
           value: adservice
         - name: OTEL_RESOURCE_ATTRIBUTES

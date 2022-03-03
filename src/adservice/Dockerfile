@@ -18,7 +18,7 @@ RUN apt-get -y update && apt-get install -qqy \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/otel && \
-    wget -q -O opt/otel/javaagent.jar https://github.com/honeycombio/honeycomb-opentelemetry-java/releases/download/v0.8.0/honeycomb-opentelemetry-javaagent-0.8.0.jar
+    wget -q -O opt/otel/javaagent.jar https://github.com/honeycombio/honeycomb-opentelemetry-java/releases/download/v0.10.0/honeycomb-opentelemetry-javaagent-0.10.0.jar
 WORKDIR /app
 COPY --from=builder /app .
 
