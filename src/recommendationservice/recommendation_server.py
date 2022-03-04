@@ -28,10 +28,6 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from logger import getJSONLogger
 
-from opentelemetry.propagate import set_global_textmap
-from opentelemetry.propagators.b3 import B3Format
-
-set_global_textmap(B3Format())
 
 logger = getJSONLogger('recommendationservice-server')
 
