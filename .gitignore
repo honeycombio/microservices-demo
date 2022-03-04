@@ -16,3 +16,5 @@ kubernetes-manifests/secrets.yaml
 secrets/
 node_modules/
 .parcel-cache/
+secret.yaml
+test.yaml
