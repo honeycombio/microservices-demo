@@ -6,6 +6,7 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
+RUN go mod tidy
 RUN go build -o /go/bin/shippingservice
 
 FROM alpine as release
