@@ -20,6 +20,13 @@ spec:
         env:
         - name: PORT
           value: "50051"
+        # if the tracking-lambda-url key is not found in the secret, this will use the embedded TrackingID generator instead
+        - name: TRACKING_LAMBDA_URL
+          valueFrom:
+            secretKeyRef:
+              name: honeycomb
+              key: tracking-lambda-url
+              optional: true
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: opentelemetry-collector:4317
         - name: POD_IP
