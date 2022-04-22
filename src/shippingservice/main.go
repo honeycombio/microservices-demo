@@ -1,21 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"io/ioutil"
 	"math/rand"
 	"net"
-	"io/ioutil"
-	"bytes"
 	"os"
 	"time"
 
@@ -36,6 +36,7 @@ const (
 )
 
 var log *logrus.Logger
+var trackingLambdaURL string
 
 func init() {
 	log = logrus.New()
@@ -101,6 +102,11 @@ func main() {
 		port = value
 	}
 	port = fmt.Sprintf(":%s", port)
+
+	if value, ok := os.LookupEnv("TRACKING_LAMBDA_URL"); ok {
+		trackingLambdaURL = value
+		log.Infof("Using Tracking Lambda URL: %s", value)
+	}
 
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
@@ -169,18 +175,23 @@ func (s *server) ShipOrder(ctx context.Context, in *pb.ShipOrderRequest) (*pb.Sh
 	defer log.Info("[ShipOrder] completed request")
 	// 1. Create a Tracking ID
 	baseAddress := fmt.Sprintf("%s, %s, %s", in.Address.StreetAddress, in.Address.City, in.Address.State)
-	resp, err := otelhttp.Post(ctx, "https://cozaem81o6.execute-api.us-east-1.amazonaws.com/createTrackingId", "application/text",
-        bytes.NewBuffer([]byte(baseAddress)))
-	if err != nil {
-		log.Fatalf("An Error Occured %v", err)
+
+	var id string
+	if trackingLambdaURL != "" {
+		resp, err := otelhttp.Post(ctx, trackingLambdaURL, "application/text",
+			bytes.NewBuffer([]byte(baseAddress)))
+		if err != nil {
+			log.Fatalf("An Error Occured %v", err)
+		}
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		id = string(body)
+	} else {
+		id = CreateTrackingId(baseAddress)
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-	   log.Fatalln(err)
-	}
-	id := string(body)
-	//id := CreateTrackingId(baseAddress)
 
 	mockDatabaseCall(ctx, 40, "INSERT shipping.shipments", "INSERT INTO shipments (order_id, tracking_id, created_at) VALUES(?, ?, ?)")
 	// 2. Generate a response.
