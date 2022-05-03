@@ -22,9 +22,9 @@ spec:
         image: loadgenerator
         env:
         - name: FRONTEND_ADDR
-          value: "frontend:80"
+          value: http://frontend
         - name: USERS
-          value: "10"
+          value: "5"
         resources:
           requests:
             cpu: 300m
