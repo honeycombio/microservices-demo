@@ -55,6 +55,7 @@ minikube start --cpus=4 --memory 4096 --disk-size 32g
 3. Install the [OpenTelemetry Collector Helm chart](https://github.com/honeycombio/helm-charts/tree/main/charts/opentelemetry-collector) from Honeycomb.
    Specify your Honeycomb API key when installing the Helm chart.
 ```shell
+helm repo add honeycomb https://honeycombio.github.io/helm-charts
 helm install opentelemetry-collector honeycomb/opentelemetry-collector \
       --set honeycomb.apiKey=YOUR_API_KEY \
       --values ./kubernetes-manifests/additional_resources/opentelemetry-collector-values.yaml
