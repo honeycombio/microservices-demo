@@ -201,7 +201,8 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	// Okay we need to fake some problems some how...
 	cacheIncrease := determineCacheIncrease(requestCache.ItemCount())
 	for i := 0; i < cacheIncrease; i++ {
-		requestCache.Set(requestID+strconv.Itoa(i), ordCache, cache.NoExpiration)
+		//Use userid as part of cache key
+		requestCache.Set(requestID+"-"+userID, ordCache, cache.NoExpiration)
 	}
 	cachesize := requestCache.ItemCount()
 
