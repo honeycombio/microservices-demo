@@ -1,3 +1,4 @@
+
 honeycomb:
   # Specify either your apiKey, **OR** the  name of an existingSecret resource containing your Honeycomb API key
   # apiKey: YOUR_API_KEY
@@ -9,12 +10,26 @@ honeycomb:
   dataset: microservices-demo
 
 config:
+  processors:
+    k8s_tagger:
+      passthrough: false
+      auth_type: "kubeConfig"
+      extract:
+        metadata:
+          # extract the following well-known metadata fields
+          - podName
+          - podUID
+          - deployment
+          - cluster
+          - namespace
+          - node
+          - startTime
   service:
     extensions: [health_check]
     pipelines:
       traces:
         receivers: [otlp]
-        processors: [memory_limiter, batch]
+        processors: [memory_limiter, batch, k8s_tagger]
         exporters: [otlp]
 
 # disable ports that are not required
