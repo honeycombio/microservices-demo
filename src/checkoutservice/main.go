@@ -389,7 +389,7 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("discounted", trace.WithAttributes(
-		attribute.String("userId", userID),
+		attribute.String("userid", userID),
 		attribute.String("currency", userCurrency),
 		attribute.String("discount", discount),
 	))
