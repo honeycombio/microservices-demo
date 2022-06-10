@@ -3,6 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
+	"math/rand"
+	"net"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/google/uuid"
 	pb "github.com/honeycombio/microservices-demo/src/checkoutservice/demo/msdemo"
 	"github.com/honeycombio/microservices-demo/src/checkoutservice/money"
@@ -23,12 +30,6 @@ import (
 	"google.golang.org/grpc/codes"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
-	"math"
-	"math/rand"
-	"net"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
@@ -338,6 +339,7 @@ func mockDatabaseCall(ctx context.Context, maxTime int, name, query string) {
 	tracer := otel.GetTracerProvider().Tracer("")
 	ctx, span := tracer.Start(ctx, name)
 	span.SetAttributes(attribute.String("db.statement", query),
+		attribute.Bool("cached", true),
 		attribute.String("db.name", "checkout"))
 	defer span.End()
 
