@@ -71,7 +71,7 @@ spec:
           - name: HONEYCOMB_API_KEY
             valueFrom:
               secretKeyRef:
-                name: honeycomb
+                name: honeycomb-opentelemetry-collector
                 key: api-key
           - name: HONEYCOMB_DATASET
             value: microservices-demo
