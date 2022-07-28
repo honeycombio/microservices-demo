@@ -10,9 +10,9 @@ click==7.0                # via flask
 configargparse==1.2.3     # via locust
 flask-basicauth==0.2.0    # via locust
 flask==1.1.2              # via flask-basicauth, locust
-gevent==20.5.2            # via geventhttpclient, locust
+gevent==21.12.0            # via geventhttpclient, locust
 geventhttpclient==1.4.2   # via locust
-greenlet==0.4.15          # via gevent
+greenlet==1.1.2          # via gevent
 idna==2.8                 # via requests
 itsdangerous==1.1.0       # via flask
 jinja2==2.11.2            # via flask
