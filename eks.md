@@ -96,6 +96,8 @@ kubeContexts:
 
 Then put your ECS repository URI in for `default-repo`.
 
+_cleanup_: if you decide to wipe out these repos: `grep image: skaffold.yaml | cut -d : -f 2 | sed 's/^ /microservices-demo\//' | xargs -L 1 aws ecr delete-repository --region us-east-1 --repository-name`
+
 4. Log in to the container registry.
 
 Here's the spell:
