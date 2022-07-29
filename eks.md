@@ -85,12 +85,13 @@ You'll need your EKS cluster's resource identifier (ARN). Get it with
 
 (If microservices-demo is not the name of your cluster, you can find its name with `aws eks list-clusters`)
 
-Put this in for `kube-context` in the file `~/.skaffold/config`. Here's what mine looks like:
+Put this in for `kube-context` in the file `~/.skaffold/config`. Add a suffix so the containers you push will be specific to this cluster.
+Here's what mine looks like:
 
 ```
 kubeContexts:
 - kube-context: arn:aws:eks:us-east-1:414141414141:cluster/microservices-demo
-  default-repo: 414141414141.dkr.ecr.us-east-1.amazonaws.com
+  default-repo: 414141414141.dkr.ecr.us-east-1.amazonaws.com/microservices-demo
 ```
 
 Then put your ECS repository URI in for `default-repo`.
@@ -109,7 +110,7 @@ This login doesn't last forever!! You'll need to do this again tomorrow, or afte
 
 We need a repository per image name. See the different images in `skaffold.yaml`. You can create the repositories in the AWS console, or do this at the command line (mac or linux):
 
-`grep image: skaffold.yaml | cut -d : -f 2 | xargs -L 1 aws ecr create-repository --region us-east-1 --repository-name`
+`grep image: skaffold.yaml | cut -d : -f 2 | sed 's/^ /microservices-demo\//' | xargs -L 1 aws ecr create-repository --region us-east-1 --repository-name`
 
 ## Build and deploy
 
