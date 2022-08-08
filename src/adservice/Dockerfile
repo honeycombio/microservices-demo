@@ -2,14 +2,14 @@ FROM openjdk:11-slim as builder
 
 WORKDIR /app
 
-COPY ["build.gradle", "gradlew", "./"]
-COPY gradle gradle
-RUN chmod +x gradlew
-RUN ./gradlew downloadRepos
+# COPY ["build.gradle", "gradlew", "./"]
+# COPY gradle gradle
+# RUN chmod +x gradlew
+# RUN ./gradlew downloadRepos
 
 COPY . .
 RUN chmod +x gradlew
-RUN ./gradlew installDist
+RUN ./gradlew installDist --console=plain
 
 FROM openjdk:11-slim
 
