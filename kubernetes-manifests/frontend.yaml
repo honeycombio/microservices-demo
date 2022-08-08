@@ -74,7 +74,7 @@ spec:
                 name: honeycomb-opentelemetry-collector
                 key: api-key
           - name: HONEYCOMB_DATASET
-            value: microservices-demo
+            value: __all__
           resources:
             requests:
               cpu: 100m

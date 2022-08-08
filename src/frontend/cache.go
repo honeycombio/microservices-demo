@@ -88,7 +88,7 @@ func (c *CacheTracker) createMarker() {
 	c.log.Debug("Creating Honeycomb marker...")
 
 	url := "https://api.honeycomb.io/1/markers/" + c.honeycombDataset
-	payload := []byte(`{"message":"Deploy 5645075", "url":"https://github.com/honeycombio/microservices-demo/commit/5645075", "type":"deploy"}`)
+	payload := []byte(`{"message":"Deploy: 5645075 | Service: checkout", "url":"https://github.com/honeycombio/microservices-demo/commit/5645075", "type":"deploy"}`)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
 	if err != nil {
 		c.log.Error(errors.Wrap(err, "could not create request to generate marker"))
