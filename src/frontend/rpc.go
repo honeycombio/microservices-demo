@@ -6,6 +6,8 @@ import (
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel/attribute"
 	apiTrace "go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -113,7 +115,15 @@ func (fe *frontendServer) getAd(ctx context.Context, ctxKeys []string) ([]*pb.Ad
 
 func (fe *frontendServer) getCacheSize(ctx context.Context) (*pb.CacheSizeResponse, error) {
 
-	resp, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).GetCacheSize(ctx, &pb.Empty{})
+	// don't use instrumented gRPC connection for this call
+	conn, err := grpc.DialContext(ctx, fe.checkoutSvcAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		panic(errors.Wrapf(err, "grpc: failed to connect to checkout service for cache size %s", fe.checkoutSvcAddr))
+	}
+
+	resp, err := pb.NewCheckoutServiceClient(conn).GetCacheSize(ctx, &pb.Empty{})
 	return resp, errors.Wrap(err, "failed to get CacheTracker size")
 
 }

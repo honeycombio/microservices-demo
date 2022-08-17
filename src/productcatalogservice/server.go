@@ -227,7 +227,7 @@ func (p *productCatalog) ListProducts(ctx context.Context, _ *pb.Empty) (*pb.Lis
 
 func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductRequest) (*pb.Product, error) {
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(attribute.String("productid", req.GetId()))
+	span.SetAttributes(attribute.String("app.product_id", req.GetId()))
 
 	//mockDatabaseCall(ctx, 30, "SELECT productcatalog.products", "SELECT * FROM products WHERE product_id = ?")
 	sleepRandom(30)
