@@ -300,21 +300,24 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	reqID := reqIDRaw.(string)
 
 	// add the UserID and requestId into OpenTelemetry Baggage to propagate across services
-	userIdMember, _ := baggage.NewMember("userid", s)
-	requestIdMember, _ := baggage.NewMember("requestID", reqID)
+	userIdMember, _ := baggage.NewMember("app.user_id", s)
+	requestIdMember, _ := baggage.NewMember("app.request_id", reqID)
+	buildIdMember, _ := baggage.NewMember("app.build_id", MockBuildId)
 	bags := baggage.FromContext(ctx)
 	bags, _ = bags.SetMember(userIdMember)
 	bags, _ = bags.SetMember(requestIdMember)
+	bags, _ = bags.SetMember(buildIdMember)
 	ctx = baggage.ContextWithBaggage(ctx, bags)
 
 	// Get current span and set additional attributes to it
 	var (
-		userIDKey    = attribute.Key("userid")
-		cartTotalKey = attribute.Key("cart_total")
-		requestIDKey = attribute.Key("requestID")
+		userIDKey    = attribute.Key("app.user_id")
+		cartTotalKey = attribute.Key("app.cart_total")
+		requestIDKey = attribute.Key("app.request_id")
+		buildIdKey   = attribute.Key("app.build_id")
 	)
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(userIDKey.String(s), requestIDKey.String(reqID))
+	span.SetAttributes(userIDKey.String(s), requestIDKey.String(reqID), buildIdKey.String(MockBuildId))
 
 	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
 		PlaceOrder(ctx, &pb.PlaceOrderRequest{

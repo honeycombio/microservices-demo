@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -72,6 +74,7 @@ var CacheTrack *CacheTracker
 var PercentNormal = 75
 var CacheUserThreshold = 35000
 var CacheMarkerThreshold = 30000
+var MockBuildId = ""
 
 func main() {
 
@@ -106,8 +109,9 @@ func main() {
 		CacheMarkerThreshold = cmt
 	}
 	apiKey := os.Getenv("HONEYCOMB_API_KEY")
+	apiKeyClassic := os.Getenv("HONEYCOMB_CLASSIC_API_KEY")
 	dataset := os.Getenv("HONEYCOMB_DATASET")
-	CacheTrack = NewCacheTracker(CacheUserThreshold, CacheMarkerThreshold, apiKey, dataset, log)
+	CacheTrack = NewCacheTracker(CacheUserThreshold, CacheMarkerThreshold, apiKey, apiKeyClassic, dataset, log)
 
 	srvPort := port
 	if os.Getenv("PORT") != "" {
@@ -115,6 +119,8 @@ func main() {
 	}
 
 	addr := os.Getenv("LISTEN_ADDR")
+
+	MockBuildId = randomHex(4)
 
 	svc := new(frontendServer)
 	mustMapEnv(&svc.productCatalogSvcAddr, "PRODUCT_CATALOG_SERVICE_ADDR")
@@ -135,14 +141,14 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
-	r.HandleFunc("/product/{id}", svc.productHandler).Methods(http.MethodGet, http.MethodHead)
-	r.HandleFunc("/cart", svc.viewCartHandler).Methods(http.MethodGet, http.MethodHead)
-	r.HandleFunc("/cart", svc.addToCartHandler).Methods(http.MethodPost)
-	r.HandleFunc("/cart/empty", svc.emptyCartHandler).Methods(http.MethodPost)
-	r.HandleFunc("/setCurrency", svc.setCurrencyHandler).Methods(http.MethodPost)
-	r.HandleFunc("/logout", svc.logoutHandler).Methods(http.MethodGet)
-	r.HandleFunc("/cart/checkout", svc.placeOrderHandler).Methods(http.MethodPost)
+	r.HandleFunc("/", instrumentHandler(svc.homeHandler)).Methods(http.MethodGet, http.MethodHead)
+	r.HandleFunc("/product/{id}", instrumentHandler(svc.productHandler)).Methods(http.MethodGet, http.MethodHead)
+	r.HandleFunc("/cart", instrumentHandler(svc.viewCartHandler)).Methods(http.MethodGet, http.MethodHead)
+	r.HandleFunc("/cart", instrumentHandler(svc.addToCartHandler)).Methods(http.MethodPost)
+	r.HandleFunc("/cart/empty", instrumentHandler(svc.emptyCartHandler)).Methods(http.MethodPost)
+	r.HandleFunc("/setCurrency", instrumentHandler(svc.setCurrencyHandler)).Methods(http.MethodPost)
+	r.HandleFunc("/logout", instrumentHandler(svc.logoutHandler)).Methods(http.MethodGet)
+	r.HandleFunc("/cart/checkout", instrumentHandler(svc.placeOrderHandler)).Methods(http.MethodPost)
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 	r.PathPrefix("/dist/").Handler(http.StripPrefix("/dist/", http.FileServer(http.Dir("./dist/"))))
 	r.HandleFunc("/robots.txt", func(w http.ResponseWriter, _ *http.Request) { _, _ = fmt.Fprint(w, "User-agent: *\nDisallow: /") })
@@ -219,4 +225,12 @@ func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string) {
 	if err != nil {
 		panic(errors.Wrapf(err, "grpc: failed to connect %s", addr))
 	}
+}
+
+func randomHex(n int) string {
+	bytes := make([]byte, n)
+	if _, err := rand.Read(bytes); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(bytes)
 }

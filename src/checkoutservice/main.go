@@ -180,16 +180,18 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	orderID, err := uuid.NewUUID()
 
 	var (
-		orderIDKey   = attribute.Key("orderid")
-		userIDKey    = attribute.Key("userid")
-		requestIDKey = attribute.Key("requestID")
-		cachesizeKey = attribute.Key("cachesize")
+		orderIDKey   = attribute.Key("app.order_id")
+		userIDKey    = attribute.Key("app.user_id")
+		requestIDKey = attribute.Key("app.request_id")
+		cachesizeKey = attribute.Key("app.cache_size")
+		buildIdKey   = attribute.Key("app.build_id")
 	)
 
 	// get userID and requestsID from Tracing Baggage
 	bags := baggage.FromContext(ctx)
-	userID := bags.Member("userid").Value()
-	requestID := bags.Member("requestID").Value()
+	userID := bags.Member("app.user_id").Value()
+	requestID := bags.Member("app.request_id").Value()
+	buildId := bags.Member("app.build_id").Value()
 
 	ordCache := &OrderCache{
 		OrderId:   orderID.String(),
@@ -206,7 +208,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	cachesize := requestCache.ItemCount()
 
 	// Add orderid to Tracing Baggage
-	orderIDMember, _ := baggage.NewMember("orderid", orderID.String())
+	orderIDMember, _ := baggage.NewMember("app.order_id", orderID.String())
 	bags, _ = bags.SetMember(orderIDMember)
 	ctx = baggage.ContextWithBaggage(ctx, bags)
 
@@ -216,6 +218,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		userIDKey.String(userID),
 		orderIDKey.String(orderID.String()),
 		requestIDKey.String(requestID),
+		buildIdKey.String(buildId),
 	)
 
 	if err != nil {
@@ -358,7 +361,7 @@ func getDiscounts(ctx context.Context, u string, cachesize int) string {
 	tracer := otel.GetTracerProvider().Tracer("")
 	ctx, span := tracer.Start(ctx, "getDiscounts")
 	var (
-		userIDKey = attribute.Key("userid")
+		userIDKey = attribute.Key("app.user_id")
 	)
 	span.SetAttributes(userIDKey.String(u))
 	defer span.End()
@@ -389,7 +392,7 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 
 	span := trace.SpanFromContext(ctx)
 	span.AddEvent("discounted", trace.WithAttributes(
-		attribute.String("userid", userID),
+		attribute.String("app.user_id", userID),
 		attribute.String("currency", userCurrency),
 		attribute.String("discount", discount),
 	))
@@ -442,7 +445,7 @@ func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*p
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))))
 
 	var (
-		userIDKey = attribute.Key("userid")
+		userIDKey = attribute.Key("app.user_id")
 	)
 
 	span := trace.SpanFromContext(ctx)

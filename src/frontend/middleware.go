@@ -4,6 +4,9 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/trace"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -13,6 +16,8 @@ import (
 
 type ctxKeyLog struct{}
 type ctxKeyRequestID struct{}
+
+type httpHandler func(w http.ResponseWriter, r *http.Request)
 
 type logHandler struct {
 	log  *logrus.Logger
@@ -67,6 +72,39 @@ func (lh *logHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, ctxKeyLog{}, log)
 	r = r.WithContext(ctx)
 	lh.next.ServeHTTP(rr, r)
+}
+
+func instrumentHandler(fn httpHandler) httpHandler {
+	// Add common attributes to the span for each handler
+	// session, request, currency, and user
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		reqIDRaw := ctx.Value(ctxKeyRequestID{}) // reqIDRaw at this point is of type 'interface{}'
+		reqID := reqIDRaw.(string)
+		userId := sessionID(r)
+
+		// add the UserID and requestId and build_id into OpenTelemetry Baggage to propagate across services
+		userIdMember, _ := baggage.NewMember("app.user_id", userId)
+		requestIdMember, _ := baggage.NewMember("app.request_id", reqID)
+		buildIdMember, _ := baggage.NewMember("app.build_id", MockBuildId)
+		bags := baggage.FromContext(ctx)
+		bags, _ = bags.SetMember(userIdMember)
+		bags, _ = bags.SetMember(requestIdMember)
+		bags, _ = bags.SetMember(buildIdMember)
+		ctx = baggage.ContextWithBaggage(ctx, bags)
+
+		// Get current span and set additional attributes to it
+		var (
+			userIDKey    = attribute.Key("app.user_id")
+			requestIDKey = attribute.Key("app.request_id")
+			buildIdKey   = attribute.Key("app.build_id")
+		)
+		span := trace.SpanFromContext(r.Context())
+		span.SetAttributes(userIDKey.String(userId), requestIDKey.String(reqID), buildIdKey.String(MockBuildId))
+
+		fn(w, r)
+	}
 }
 
 func ensureSessionID(next http.Handler) http.HandlerFunc {
