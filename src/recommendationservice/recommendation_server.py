@@ -65,8 +65,8 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
                                "SELECT * FROM products WHERE category IN (?)")
 
             span = trace.get_current_span()
-            span.set_attribute("active_threads", len(worker_pool._threads))
-            span.set_attribute("pending_pool", worker_pool._work_queue.qsize())
+            span.set_attribute("app.python.active_threads", len(worker_pool._threads))
+            span.set_attribute("app.python.pending_pool", worker_pool._work_queue.qsize())
             max_responses = 5
 
             # fetch list of products from product catalog stub

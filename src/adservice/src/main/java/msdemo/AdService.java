@@ -124,9 +124,7 @@ public final class AdService {
             // Get the current OpenTelemetry span
             Span span = Span.current();
             try {
-                // Add a span attribute
-                span.setAttribute("method", "getAds");
-                span.setAttribute("context_keys", req.getContextKeysList().toString());
+                span.setAttribute("app.context_keys", req.getContextKeysList().toString());
 
                 mockDatabaseCall(125, "SELECT ads.ads", "SELECT * from ads WHERE context_words LIKE ?");
 
@@ -140,8 +138,8 @@ public final class AdService {
                     span.addEvent(
                             "Constructing Ads using context",
                             io.opentelemetry.api.common.Attributes.of(
-                                    AttributeKey.stringKey("Context Keys"), req.getContextKeysList().toString(),
-                                    AttributeKey.longKey("Context Keys length"), keyCount));
+                                    AttributeKey.stringKey("app.context_keys"), req.getContextKeysList().toString(),
+                                    AttributeKey.longKey("app.context_keys_length"), keyCount));
 
                     for (int i = 0; i < keyCount; i++) {
                         Collection<Ad> ads = service.getAdsByCategory(req.getContextKeys(i));
