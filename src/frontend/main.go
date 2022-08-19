@@ -62,6 +62,7 @@ type frontendServer struct {
 
 	checkoutSvcAddr string
 	checkoutSvcConn *grpc.ClientConn
+	getCacheConn    *grpc.ClientConn
 
 	shippingSvcAddr string
 	shippingSvcConn *grpc.ClientConn
@@ -109,9 +110,7 @@ func main() {
 		CacheMarkerThreshold = cmt
 	}
 	apiKey := os.Getenv("HONEYCOMB_API_KEY")
-	apiKeyClassic := os.Getenv("HONEYCOMB_CLASSIC_API_KEY")
-	dataset := os.Getenv("HONEYCOMB_DATASET")
-	CacheTrack = NewCacheTracker(CacheUserThreshold, CacheMarkerThreshold, apiKey, apiKeyClassic, dataset, log)
+	CacheTrack = NewCacheTracker(CacheUserThreshold, CacheMarkerThreshold, apiKey, log)
 
 	srvPort := port
 	if os.Getenv("PORT") != "" {
@@ -138,6 +137,13 @@ func main() {
 	mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr)
 	mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr)
 	mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr)
+	// getCache connection is not instrumented
+	svc.getCacheConn, err = grpc.DialContext(ctx, svc.checkoutSvcAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		panic(errors.Wrapf(err, "grpc: failed to create getCache connection to checkout service %s", svc.checkoutSvcAddr))
+	}
 
 	r := mux.NewRouter()
 
