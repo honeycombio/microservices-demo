@@ -5,7 +5,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/trace"
 	"math/rand"
 	"net/http"
@@ -83,16 +82,6 @@ func instrumentHandler(fn httpHandler) httpHandler {
 		reqIDRaw := ctx.Value(ctxKeyRequestID{}) // reqIDRaw at this point is of type 'interface{}'
 		reqID := reqIDRaw.(string)
 		userId := sessionID(r)
-
-		// add the UserID and requestId and build_id into OpenTelemetry Baggage to propagate across services
-		userIdMember, _ := baggage.NewMember("app.user_id", userId)
-		requestIdMember, _ := baggage.NewMember("app.request_id", reqID)
-		buildIdMember, _ := baggage.NewMember("app.build_id", MockBuildId)
-		bags := baggage.FromContext(ctx)
-		bags, _ = bags.SetMember(userIdMember)
-		bags, _ = bags.SetMember(requestIdMember)
-		bags, _ = bags.SetMember(buildIdMember)
-		ctx = baggage.ContextWithBaggage(ctx, bags)
 
 		// Get current span and set additional attributes to it
 		var (
