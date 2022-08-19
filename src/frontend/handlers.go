@@ -310,14 +310,7 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	ctx = baggage.ContextWithBaggage(ctx, bags)
 
 	// Get current span and set additional attributes to it
-	var (
-		userIDKey    = attribute.Key("app.user_id")
-		cartTotalKey = attribute.Key("app.cart_total")
-		requestIDKey = attribute.Key("app.request_id")
-		buildIdKey   = attribute.Key("app.build_id")
-	)
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(userIDKey.String(s), requestIDKey.String(reqID), buildIdKey.String(MockBuildId))
 
 	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
 		PlaceOrder(ctx, &pb.PlaceOrderRequest{
@@ -353,7 +346,7 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 
 	// add total paid to span
 	totalPaidNum, err := strconv.ParseFloat(fmt.Sprintf("%d.%02d", totalPaid.GetUnits(), totalPaid.GetNanos()/10000000), 64)
-	span.SetAttributes(cartTotalKey.Float64(totalPaidNum))
+	span.SetAttributes(attribute.Key("app.cart_total").Float64(totalPaidNum))
 
 	currencies, err := fe.getCurrencies(r.Context())
 	if err != nil {
