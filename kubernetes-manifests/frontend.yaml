@@ -73,8 +73,6 @@ spec:
               secretKeyRef:
                 name: honeycomb
                 key: api-key
-          - name: HONEYCOMB_DATASET
-            value: microservices-demo
           resources:
             requests:
               cpu: 100m
