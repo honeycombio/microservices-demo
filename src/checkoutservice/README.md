@@ -6,7 +6,7 @@ The **checkout** service provides cart management, and order placement functiona
 
 ### Initialization
 The OpenTelemetry SDK is initialized in `main` using the `initOtelTracing` function
-```go
+```
 func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.TracerProvider {
 	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if endpoint == "" {
@@ -49,7 +49,7 @@ func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.Trac
 
 You should call `TraceProvider.shutdown()` when your service is shutdown to ensure all spans are exported.
 This service makes that call as part of a deferred function in `main`
-```go
+```
 	// Initialize OpenTelemetry Tracing
 	ctx := context.Background()
 	tp := initOtelTracing(ctx, log)
@@ -58,7 +58,7 @@ This service makes that call as part of a deferred function in `main`
 
 ### gRPC instrumentation
 This service receives gRPC requests, which are instrumented in the `main` function as part of the gRPC server creation.
-```go
+```
 	// create gRPC server with OpenTelemetry instrumentation on all incoming requests
     srv := grpc.NewServer(
         grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
