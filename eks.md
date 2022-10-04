@@ -22,6 +22,8 @@ Search for the EKS service. Create a new cluster. I picked all the defaults, exc
 
 consider naming it microservices-demo.
 
+Note: only you, personally, your AWS user, will have access to the cluster. Even if other people have an admin role. Ugh.
+
 7. Confirm that the cluster exists and I can access it
 
 on my computer,
@@ -29,13 +31,38 @@ on my computer,
 
 It should show the new cluster.
 
+Note: no one else will be able to ask it. If you have another person to share with, you can make them an IAM user, and then:
+`eksctl create iamidentitymapping --cluster microservices-demo --region=us-east-1 --arn arn:aws:iam::131312313131:user/yourfriend --group system:masters --username yourfriend`
+
+where the ARN here is their result from `aws sts get-caller-identity` and their username is something, it doesn't seem to matter.
+
+Note that you had to [install](https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html) `eksctl` for this.
+
 8. configure kubectl on my computer.
 
 Install kubectl if I haven't already; and then:
 
 `aws eks update-kubeconfig --region us-east-1 --name microservices-demotron`
 
+note:
+
+I got "Cluster status is CREATING" and then it didn't work... maybe the cluster needs to be up first?
+
+check its status:
+
+`aws eks describe-cluster --name microservices-demo`
+
+Wait until it is ACTIVE.
+
+end note.
+
 Check whether it works:
+
+`kubectl config get-contexts`
+
+This should show one or more contexts (user+cluster), and the \* should be near the new one.
+
+(to get back to a different one, it's `kubctl config use-context [name]`)
 
 `kubectl get svc`
 
@@ -50,6 +77,12 @@ No nodes were listed.
 7. Add some nodes to the cluster. When I looked at my cluster in the AWS Console (after searching for EKS), it gave me a popup about adding nodes.
 
 I made an EKS node group for this. It was a whole process, even sticking with the defaults. It wanted a new security group again, and this time linked to a set of instructions that told me what roles to manually add to the new security group.
+
+Later I found that I needed 3 nodes in the node group.
+
+See the node group:
+
+`aws eks list-nodegroups --cluster-name microservices-demo`
 
 8. See some nodes
 
