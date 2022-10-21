@@ -19,6 +19,8 @@ spec:
         ports:
         - containerPort: 9555
         env:
+        - name: OTEL_PROPAGATORS
+          value: b3,b3multi,tracecontext,baggage
         - name: PORT
           value: "9555"
         - name: POD_IP

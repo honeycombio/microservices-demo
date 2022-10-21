@@ -19,6 +19,8 @@ spec:
         ports:
         - containerPort: 3550
         env:
+        - name: OTEL_PROPAGATORS
+          value: b3,b3multi,tracecontext,baggage
         - name: PORT
           value: "3550"
         - name: OTEL_EXPORTER_OTLP_ENDPOINT

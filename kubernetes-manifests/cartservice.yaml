@@ -19,6 +19,8 @@ spec:
         ports:
         - containerPort: 7070
         env:
+        - name: OTEL_PROPAGATORS
+          value: b3,b3multi,tracecontext,baggage
         - name: REDIS_ADDR
           value: "redis-cart:6379"
         - name: SERVICE_NAME

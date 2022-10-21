@@ -18,6 +18,8 @@ spec:
         ports:
         - containerPort: 50051
         env:
+        - name: OTEL_PROPAGATORS
+          value: b3,b3multi,tracecontext,baggage
         - name: PORT
           value: "50051"
         # if the tracking-lambda-url key is not found in the secret, this will use the embedded TrackingID generator instead

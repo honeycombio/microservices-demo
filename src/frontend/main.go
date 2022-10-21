@@ -5,11 +5,17 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	middleware "go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/propagators/b3"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -19,10 +25,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
@@ -192,9 +194,9 @@ func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.Trac
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	p := b3.New(b3.WithInjectEncoding(b3.B3MultipleHeader | b3.B3SingleHeader))
 	// Specify the TextMapPropagator to ensure spans propagate across service boundaries
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}))
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}, p))
 
 	// Set standard attributes per semantic conventions
 	res := resource.NewWithAttributes(
