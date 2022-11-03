@@ -17,7 +17,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: foxish/emailservice:b997db5
+        image: foxish/emailservice:latest
         ports:
         - containerPort: 8080
         env:

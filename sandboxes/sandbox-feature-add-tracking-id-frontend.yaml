@@ -3,7 +3,7 @@ spec:
   ttl:
     duration: 2d
   tags:
-    team: route
+    team: frontend
     owner: foxish
   description: sandbox env to test a new checkout service change
   cluster: demo
@@ -14,7 +14,7 @@ spec:
       namespace: shop
     customizations:
       images:
-      - image: foxish/frontend:b997db5
+      - image: '@{image}'
   endpoints:
   - name: hotrod-fe
     host: frontend.shop.svc

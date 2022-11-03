@@ -16,7 +16,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: server
-          image: foxish/checkoutservice:b997db5-dirty
+          image: foxish/checkoutservice:latest
           ports:
           - containerPort: 5050
           # readinessProbe:

@@ -17,7 +17,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: foxish/paymentservice:b997db5
+        image: foxish/paymentservice:latest
         ports:
         - containerPort: 50051
         env:

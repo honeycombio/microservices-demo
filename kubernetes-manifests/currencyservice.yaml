@@ -17,7 +17,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: foxish/currencyservice:b997db5
+        image: foxish/currencyservice:latest
         ports:
         - name: grpc
           containerPort: 7000

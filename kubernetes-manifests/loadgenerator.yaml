@@ -17,7 +17,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: main
-        image: foxish/loadgenerator:b997db5
+        image: foxish/loadgenerator:latest
         env:
         - name: FRONTEND_ADDR
           value: http://frontend
