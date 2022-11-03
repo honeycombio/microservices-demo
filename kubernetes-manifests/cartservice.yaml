@@ -17,7 +17,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: foxish/cartservice:latest
+        image: signadot/cartservice:latest
         ports:
         - containerPort: 7070
         env:

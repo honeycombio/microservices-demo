@@ -16,7 +16,7 @@ spec:
       serviceAccountName: default
       containers:
       - name: server
-        image: foxish/shippingservice:latest
+        image: signadot/shippingservice:latest
         ports:
         - containerPort: 50051
         env:

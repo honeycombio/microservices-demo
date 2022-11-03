@@ -16,7 +16,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: server
-          image: foxish/frontend:latest
+          image: signadot/frontend:latest
           ports:
           - containerPort: 8080
           # readinessProbe:

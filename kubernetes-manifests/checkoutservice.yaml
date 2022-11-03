@@ -16,7 +16,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: server
-          image: foxish/checkoutservice:latest
+          image: signadot/checkoutservice:latest
           ports:
           - containerPort: 5050
           # readinessProbe:
