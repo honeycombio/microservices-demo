@@ -10,12 +10,14 @@ spec:
     metadata:
       labels:
         app: adservice
+      annotations:
+        sidecar.signadot.com/inject: grpc
     spec:
       serviceAccountName: default
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: adservice
+        image: foxish/adservice:b997db5
         ports:
         - containerPort: 9555
         env:

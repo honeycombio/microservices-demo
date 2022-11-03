@@ -10,12 +10,14 @@ spec:
     metadata:
       labels:
         app: cartservice
+      annotations:
+        sidecar.signadot.com/inject: grpc
     spec:
       serviceAccountName: default
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: cartservice
+        image: foxish/cartservice:b997db5
         ports:
         - containerPort: 7070
         env:

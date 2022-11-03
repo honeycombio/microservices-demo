@@ -1,0 +1,22 @@
+name: 'feat-tracking-id-frontend'
+spec:
+  ttl:
+    duration: 2d
+  tags:
+    team: route
+    owner: foxish
+  description: sandbox env to test a new checkout service change
+  cluster: demo
+  forks:
+  - forkOf:
+      kind: Deployment
+      name: frontend
+      namespace: shop
+    customizations:
+      images:
+      - image: foxish/frontend:b997db5
+  endpoints:
+  - name: hotrod-fe
+    host: frontend.shop.svc
+    port: 80
+    protocol: http

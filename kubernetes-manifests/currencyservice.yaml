@@ -10,12 +10,14 @@ spec:
     metadata:
       labels:
         app: currencyservice
+      annotations:
+        sidecar.signadot.com/inject: grpc
     spec:
       serviceAccountName: default
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: currencyservice
+        image: foxish/currencyservice:b997db5
         ports:
         - name: grpc
           containerPort: 7000

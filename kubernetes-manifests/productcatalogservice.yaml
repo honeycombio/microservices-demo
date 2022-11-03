@@ -10,12 +10,14 @@ spec:
     metadata:
       labels:
         app: productcatalogservice
+      annotations:
+        sidecar.signadot.com/inject: grpc
     spec:
       serviceAccountName: default
       terminationGracePeriodSeconds: 5
       containers:
       - name: server
-        image: productcatalogservice
+        image: foxish/productcatalogservice:b997db5
         ports:
         - containerPort: 3550
         env:

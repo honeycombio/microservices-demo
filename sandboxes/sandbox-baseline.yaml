@@ -1,0 +1,12 @@
+name: 'baseline'
+spec:
+  tags:
+    team: fe
+    owner: foxish
+  description: sandbox env for baseline
+  cluster: demo
+  endpoints:
+  - name: hotrod-fe
+    host: frontend.shop.svc
+    port: 80
+    protocol: http

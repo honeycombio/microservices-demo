@@ -3,6 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
+	"math/rand"
+	"net"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/google/uuid"
 	pb "github.com/honeycombio/microservices-demo/src/checkoutservice/demo/msdemo"
 	"github.com/honeycombio/microservices-demo/src/checkoutservice/money"
@@ -23,12 +30,6 @@ import (
 	"google.golang.org/grpc/codes"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
-	"math"
-	"math/rand"
-	"net"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
@@ -260,7 +261,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	))
 
 	// Ship Order
-	shippingTrackingID, err := cs.shipOrder(ctx, req.Address, prep.cartItems)
+	_, err = cs.shipOrder(ctx, req.Address, prep.cartItems)
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "shipping error: %+v", err)
 	}
@@ -271,11 +272,10 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	))
 
 	orderResult := &pb.OrderResult{
-		OrderId:            orderID.String(),
-		ShippingTrackingId: shippingTrackingID,
-		ShippingCost:       prep.shippingCostLocalized,
-		ShippingAddress:    req.Address,
-		Items:              prep.orderItems,
+		OrderId:         orderID.String(),
+		ShippingCost:    prep.shippingCostLocalized,
+		ShippingAddress: req.Address,
+		Items:           prep.orderItems,
 	}
 
 	// empty cart async

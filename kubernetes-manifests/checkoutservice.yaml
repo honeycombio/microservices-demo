@@ -10,11 +10,13 @@ spec:
     metadata:
       labels:
         app: checkoutservice
+      annotations:
+        sidecar.signadot.com/inject: grpc
     spec:
       serviceAccountName: default
       containers:
         - name: server
-          image: checkoutservice
+          image: foxish/checkoutservice:b997db5-dirty
           ports:
           - containerPort: 5050
           # readinessProbe:

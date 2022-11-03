@@ -10,11 +10,13 @@ spec:
     metadata:
       labels:
         app: shippingservice
+      annotations:
+        sidecar.signadot.com/inject: grpc
     spec:
       serviceAccountName: default
       containers:
       - name: server
-        image: shippingservice
+        image: foxish/shippingservice:b997db5
         ports:
         - containerPort: 50051
         env:
