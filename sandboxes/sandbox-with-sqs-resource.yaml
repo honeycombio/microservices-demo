@@ -1,0 +1,38 @@
+name: 'feat-tracking-id-frontend'
+spec:
+  ttl:
+    duration: 2d
+  tags:
+    team: frontend
+    owner: foxish
+  description: sandbox env to test a new checkout service change
+  cluster: demo
+  resources:
+  - name: mysqs
+    plugin: sd-amazon-sqs
+    params:
+      region: us-west-2
+  forks:
+  - forkOf:
+      kind: Deployment
+      name: frontend
+      namespace: shop
+    customizations:
+      images:
+      - image: '@{image}'
+      env:
+      - name: QUEUE_NAME
+        valueFrom:
+          resource:
+            name: mysqs
+            outputKey: queue-name
+      - name: QUEUE_URL
+        valueFrom:
+          resource:
+            name: mysqs
+            outputKey: queue-url
+  endpoints:
+  - name: hotrod-fe
+    host: frontend.shop.svc
+    port: 80
+    protocol: http
