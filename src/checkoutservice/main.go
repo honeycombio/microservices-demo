@@ -261,7 +261,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	))
 
 	// Ship Order
-	_, err = cs.shipOrder(ctx, req.Address, prep.cartItems)
+	shippingTrackingID, err := cs.shipOrder(ctx, req.Address, prep.cartItems)
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "shipping error: %+v", err)
 	}
@@ -272,10 +272,11 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	))
 
 	orderResult := &pb.OrderResult{
-		OrderId:         orderID.String(),
-		ShippingCost:    prep.shippingCostLocalized,
-		ShippingAddress: req.Address,
-		Items:           prep.orderItems,
+		OrderId:            orderID.String(),
+		ShippingTrackingId: shippingTrackingID,
+		ShippingCost:       prep.shippingCostLocalized,
+		ShippingAddress:    req.Address,
+		Items:              prep.orderItems,
 	}
 
 	// empty cart async
