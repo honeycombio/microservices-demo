@@ -2,7 +2,6 @@ on:
   pull_request:
     branches:
       - master
-      - add-gha
 jobs:
   changes:
     runs-on: ubuntu-latest
