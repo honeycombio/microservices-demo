@@ -1,0 +1,162 @@
+on:
+  pull_request:
+    branches:
+      - master
+      - add-gha
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      checkoutservice: ${{ steps.filter.outputs.checkoutservice }}
+    steps:
+      # The paths-filter action requires a checkout step for push events.
+      - if: ${{ github.event_name == 'push' }}
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'src/frontend/**'
+            checkoutservice:
+              - 'src/checkoutservice/**'
+
+  build-fe:
+    needs: [ changes ]
+    name: Build frontend
+    runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.frontend == 'true' }} 
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Docker Login
+        uses: docker/login-action@v1.9.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+      - name: Build Docker images
+        uses: hiberbee/github-action-skaffold@1.19.0
+        with:
+          command: build -b frontend --file-output=tags.json
+          repository: docker.io/signadot
+          push: docker.io/signadot
+          tag: ${{ github.sha }}
+          filename: ${{ github.workspace }}/skaffold.yaml
+          
+      - name: Create FE Sandbox
+        env:
+          SIGNADOT_ORG: signadot
+          IMAGE_TAG: ${{ github.sha }}
+          SIGNADOT_API_KEY: ${{ secrets.SIGNADOT_API_KEY }}
+        run: |
+          docker run -i \
+            -e SIGNADOT_ORG=${SIGNADOT_ORG} \
+            -e SIGNADOT_API_KEY=${SIGNADOT_API_KEY} \
+            signadot/signadot-cli \
+            /signadot sandbox apply \
+            --set image=signadot/frontend:${IMAGE_TAG} \
+            --set gitsha=${IMAGE_TAG:0:6} \
+            -f - \
+            -o json \
+            < ${GITHUB_WORKSPACE}/.signadot/sandbox-frontend-template.yaml \
+            > ${GITHUB_WORKSPACE}/.signadot/sandbox-frontend-response.json
+
+      - id: get-comment-body
+        run: |
+          body="https://app.signadot.com/sandbox/name/$(cat ${GITHUB_WORKSPACE}/.signadot/sandbox-frontend-response.json | jq -r '.name')"
+          body="${body//'%'/'%25'}"
+          body="${body//$'\n'/'%0A'}"
+          body="${body//$'\r'/'%0D'}" 
+          echo "::set-output name=body::$body"
+      - name: Find Comment
+        uses: peter-evans/find-comment@v1
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Sandbox
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body: |
+            Sandbox Ready!
+            
+            ${{ steps.get-comment-body.outputs.body }}
+          edit-mode: replace
+      
+      
+  build-checkoutsvc:
+    needs: [ changes ]
+    name: Build checkoutservice
+    runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.checkoutservice == 'true' }} 
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Docker Login
+        uses: docker/login-action@v1.9.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+      - name: Build Docker images
+        uses: hiberbee/github-action-skaffold@1.19.0
+        with:
+          command: build -b checkoutservice --file-output=tags.json
+          repository: docker.io/signadot
+          push: docker.io/signadot
+          tag: ${{ github.sha }}
+          filename: ${{ github.workspace }}/skaffold.yaml
+          
+      - name: Create CheckoutService Sandbox
+        env:
+          SIGNADOT_ORG: signadot
+          IMAGE_TAG: ${{ github.sha }}
+          SIGNADOT_API_KEY: ${{ secrets.SIGNADOT_API_KEY }}
+        run: |
+          docker run -i \
+            -e SIGNADOT_ORG=${SIGNADOT_ORG} \
+            -e SIGNADOT_API_KEY=${SIGNADOT_API_KEY} \
+            signadot/signadot-cli \
+            /signadot sandbox apply \
+            --set image=signadot/checkoutservice:${IMAGE_TAG} \
+            --set gitsha=${IMAGE_TAG:0:6} \
+            -f - \
+            -o json \
+            < ${GITHUB_WORKSPACE}/.signadot/sandbox-checkoutservice-template.yaml \
+            > ${GITHUB_WORKSPACE}/.signadot/sandbox-checkoutservice-response.json
+      
+      - id: get-comment-body
+        run: |
+          body="https://app.signadot.com/sandbox/name/$(cat ${GITHUB_WORKSPACE}/.signadot/sandbox-checkoutservice-response.json | jq -r '.name')"
+          body="${body//'%'/'%25'}"
+          body="${body//$'\n'/'%0A'}"
+          body="${body//$'\r'/'%0D'}" 
+          echo "::set-output name=body::$body"
+      - name: Find Comment
+        uses: peter-evans/find-comment@v1
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Sandbox
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body: |
+            Sandbox Ready!
+            
+            ${{ steps.get-comment-body.outputs.body }}
+          edit-mode: replace
+      

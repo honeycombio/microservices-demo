@@ -1,11 +1,11 @@
-name: 'feat-tracking-id-frontend'
+name: 'frontend-@{gitsha}'
 spec:
   ttl:
     duration: 2d
-  tags:
+  labels:
     team: frontend
-    owner: foxish
-  description: sandbox env to test a new checkout service change
+    app: shop
+  description: sandbox to test new frontend change
   cluster: demo
   forks:
   - forkOf:

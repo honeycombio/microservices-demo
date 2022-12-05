@@ -1,11 +1,11 @@
-name: 'feat-tracking-id-checkoutsvc'
+name: 'checkoutservice-@{gitsha}'
 spec:
   ttl:
     duration: 2d
-  tags:
+  labels:
     team: checkoutservice
-    owner: foxish
-  description: sandbox env to test a new checkout service change
+    app: shop
+  description: sandbox env to test new checkout service
   cluster: demo
   forks:
   - forkOf:

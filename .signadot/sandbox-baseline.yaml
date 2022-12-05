@@ -1,8 +1,7 @@
 name: 'baseline'
 spec:
-  tags:
-    team: fe
-    owner: foxish
+  labels:
+    app: shop
   description: sandbox env for baseline
   cluster: demo
   endpoints:
