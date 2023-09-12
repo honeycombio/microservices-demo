@@ -57,6 +57,7 @@ service ProductCatalogService {
     rpc ListProducts(Empty) returns (ListProductsResponse) {}
     rpc GetProduct(GetProductRequest) returns (Product) {}
     rpc SearchProducts(SearchProductsRequest) returns (SearchProductsResponse) {}
+    rpc AuditProductService(AuditRequest) returns (Empty) {}
 }
 
 message Product {
@@ -92,6 +93,7 @@ message SearchProductsResponse {
 service ShippingService {
     rpc GetQuote(GetQuoteRequest) returns (GetQuoteResponse) {}
     rpc ShipOrder(ShipOrderRequest) returns (ShipOrderResponse) {}
+    rpc AuditShippingService(AuditRequest) returns (Empty) {}
 }
 
 message GetQuoteRequest {
@@ -209,6 +211,7 @@ message SendOrderConfirmationRequest {
 service CheckoutService {
     rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse) {}
     rpc GetCacheSize(Empty) returns (CacheSizeResponse) {}
+    rpc AuditCheckoutService(AuditRequest) returns (Empty) {}
 }
 
 message PlaceOrderRequest {
@@ -249,4 +252,18 @@ message Ad {
 
     // short advertisement text to display.
     string text = 2;
+}
+
+// ---------------Storage service ----------------
+
+service StorageService {
+    rpc SaveAudit(SaveAuditRequest) returns (Empty) {}
+}
+
+message SaveAuditRequest {
+    string id = 1;
+}
+
+message AuditRequest {
+    string id = 1;
 }

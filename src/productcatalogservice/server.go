@@ -257,3 +257,12 @@ func (p *productCatalog) SearchProducts(ctx context.Context, req *pb.SearchProdu
 	}
 	return &pb.SearchProductsResponse{Results: ps}, nil
 }
+
+func (p *productCatalog) AuditProductService(ctx context.Context, req *pb.AuditRequest) (*pb.Empty, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("audit_id", req.GetId()))
+
+	sleepRandom(1000)
+
+	return &pb.Empty{}, nil
+}

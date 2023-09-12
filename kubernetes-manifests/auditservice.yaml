@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auditservice
+spec:
+  selector:
+    matchLabels:
+      app: auditservice
+  template:
+    metadata:
+      labels:
+        app: auditservice
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: server
+          image: auditservice
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: opentelemetry-collector:4317
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: ip=$(POD_IP)
+          resources:
+            requests:
+              cpu: 100m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi

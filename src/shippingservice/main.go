@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"go.opentelemetry.io/otel/trace"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -141,6 +142,15 @@ func (s *server) Check(_ context.Context, _ *healthpb.HealthCheckRequest) (*heal
 
 func (s *server) Watch(_ *healthpb.HealthCheckRequest, _ healthpb.Health_WatchServer) error {
 	return status.Errorf(codes.Unimplemented, "health check via Watch not implemented")
+}
+
+func (cs *server) AuditShippingService(ctx context.Context, req *pb.AuditRequest) (*pb.Empty, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("audit_id", req.GetId()))
+
+	sleepRandom(1000)
+
+	return &pb.Empty{}, nil
 }
 
 // GetQuote produces a shipping quote (cost) in USD.

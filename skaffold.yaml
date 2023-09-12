@@ -1,72 +1,57 @@
-apiVersion: skaffold/v2beta29
+apiVersion: skaffold/v3
 kind: Config
 build:
   artifacts:
-    # image tags are relative; to specify an image repo (e.g. GCR), you
-    # must provide a "default repo" using one of the methods described
-    # here:
-    # https://skaffold.dev/docs/concepts/#image-repository-handling
+  # image tags are relative; to specify an image repo (e.g. GCR), you
+  # must provide a "default repo" using one of the methods described
+  # here:
+  # https://skaffold.dev/docs/concepts/#image-repository-handling
     - image: adservice
       context: src/adservice
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
+    - image: auditservice
+      context: src/auditservice
+      platforms: ["linux/amd64"]
     - image: cartservice
       context: src/cartservice
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
     - image: checkoutservice
       context: src/checkoutservice
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
     - image: currencyservice
       context: src/currencyservice
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
     - image: emailservice
       context: src/emailservice
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
     - image: frontend
       context: src/frontend
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
     - image: loadgenerator
       context: src/loadgenerator
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
     - image: paymentservice
       context: src/paymentservice
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
     - image: productcatalogservice
       context: src/productcatalogservice
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
     - image: recommendationservice
       context: src/recommendationservice
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
     - image: shippingservice
       context: src/shippingservice
-      docker:
-        cliFlags:
-          - --platform=linux/x86_64
+      platforms: ["linux/amd64"]
+    - image: storageservice
+      context: src/storageservice
+      platforms: ["linux/amd64"]
   tagPolicy:
     gitCommit: {}
   local:
-    # useBuildkit: false
-    useDockerCLI: true
+    useBuildkit: false
+manifests:
+  rawYaml:
+    - ./kubernetes-manifests/**.yaml
 deploy:
-  kubectl:
-    manifests:
-      - ./kubernetes-manifests/**.yaml
+  kubectl: {}
+

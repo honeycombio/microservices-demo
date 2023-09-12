@@ -174,6 +174,15 @@ func (cs *checkoutService) GetCacheSize(_ context.Context, _ *pb.Empty) (*pb.Cac
 	}, nil
 }
 
+func (cs *checkoutService) AuditCheckoutService(ctx context.Context, req *pb.AuditRequest) (*pb.Empty, error) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("audit_id", req.GetId()))
+
+	sleepRandom(1000)
+
+	return &pb.Empty{}, nil
+}
+
 func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (*pb.PlaceOrderResponse, error) {
 	log.Infof("[PlaceOrder] user_id=%q user_currency=%q", req.UserId, req.UserCurrency)
 

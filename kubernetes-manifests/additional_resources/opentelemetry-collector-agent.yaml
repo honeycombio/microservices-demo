@@ -1,0 +1,79 @@
+mode: daemonset
+
+presets:
+  kubeletMetrics:
+    enabled: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 2Gi
+  requests:
+    cpu: 200m
+    memory: 400Mi
+
+config:
+  receivers:
+    kubeletstats:
+      collection_interval: 10s
+      metric_groups:
+        - node
+        - pod
+        - container
+      metrics:
+        k8s.node.uptime:
+          enabled: true
+        k8s.pod.uptime:
+          enabled: true
+        container.uptime:
+          enabled: true
+
+  exporters:
+    otlp/dogfood-analyze-metrics:
+      endpoint: api-dogfood.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": "${HONEYCOMB_DOGFOOD_API_KEY}"
+        "x-honeycomb-dataset": "kubernetes-metrics"
+    otlp/dogfood-k8s-metrics:
+      endpoint: api-dogfood.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": "${env:HONEYCOMB_DOGFOOD_K8S_API_KEY}"
+        "x-honeycomb-dataset": "kubernetes-metrics"
+
+  service:
+    pipelines:
+      traces: null
+      metrics:
+        receivers:
+          - kubeletstats
+        exporters:
+          - otlp/dogfood-k8s-metrics
+          - otlp/dogfood-analyze-metrics
+          - logging
+      logs: null
+
+extraEnvs:
+  - name: HONEYCOMB_DOGFOOD_API_KEY
+    valueFrom:
+      secretKeyRef:
+        key: api-key
+        name: honeycomb-dogfood-opentelemetry-collector
+  - name: HONEYCOMB_DOGFOOD_K8S_API_KEY
+    valueFrom:
+      secretKeyRef:
+        key: api-key
+        name: honeycomb-dogfood-k8s-opentelemetry-collector
+
+ports:
+  otlp:
+    enabled: false
+  otlp-http:
+    enabled: false
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false

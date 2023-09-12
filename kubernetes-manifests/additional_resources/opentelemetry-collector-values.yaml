@@ -1,56 +1,10 @@
+mode: deployment
 
-honeycomb:
-  # Specify either your apiKey, **OR** the  name of an existingSecret resource containing your Honeycomb API key
-  # apiKey: YOUR_API_KEY
-  # existingSecret: honeycomb-api-key
+replicaCount: 1
 
-  # Specify host URL to send all events to
-  apiHost: api.honeycomb.io:443
-  # Specify the name of the dataset to send data to
-  dataset: microservices-demo
-
-config:
-  processors:
-    k8sattributes:
-      passthrough: false
-      auth_type: "kubeConfig"
-      extract:
-        metadata:
-          # extract the following well-known metadata fields
-          - k8s.pod.name
-          - k8s.pod.uid
-          - k8s.deployment.name
-          - k8s.namespace.name
-          - k8s.node.name
-          - k8s.pod.start_time
-  service:
-    extensions: [health_check]
-    pipelines:
-      traces:
-        receivers: [otlp]
-        processors: [memory_limiter, batch, k8sattributes]
-        exporters: [otlp]
-
-# disable ports that are not required
-ports:
-  jaeger-binary:
-    enabled: false
-  jaeger-compact:
-    enabled: false
-  jaeger-grpc:
-    enabled: false
-  jaeger-http:
-    enabled: false
-  zipkin:
-    enabled: false
-
-k8sProcessor:
-  rbac:
-    name: "microservices-tagger"
-    create: true
-
-serviceAccount:
-  create: true
+presets:
+  kubernetesAttributes:
+    enabled: true
 
 resources:
   limits:
@@ -59,3 +13,112 @@ resources:
   requests:
     cpu: 200m
     memory: 400Mi
+
+config:
+  receivers:
+    jaeger: null
+    zipkin: null
+    prometheus: null
+
+  processors:
+    filter/analyze-scenario-only:
+      error_mode: ignore
+      traces:
+        span:
+          - 'name == "audit start"'
+          - 'name == "msdemo.ShippingService/AuditShippingService"'
+          - 'name == "msdemo.CheckoutService/AuditCheckoutService"'
+          - 'name == "msdemo.ProductCatalogService/AuditProductService"'
+          - 'name == "msdemo.StorageService/SaveAudit"'
+          - 'name == "INSERT audit transaction"'
+    filter/k8s-scenario-only:
+      error_mode: ignore
+      traces:
+        span:
+          - |
+            name != "audit start" and
+            name != "msdemo.ShippingService/AuditShippingService" and
+            name != "msdemo.CheckoutService/AuditCheckoutService" and
+            name != "msdemo.ProductCatalogService/AuditProductService" and
+            name != "msdemo.StorageService/SaveAudit" and
+            name != "INSERT audit transaction"
+
+  exporters:
+    otlp/prod-analyze:
+      endpoint: api.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": "${HONEYCOMB_API_KEY}"
+        "x-honeycomb-dataset": "microservices-metrics"
+    otlp/dogfood-analyze:
+      endpoint: api-dogfood.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": "${HONEYCOMB_DOGFOOD_API_KEY}"
+        "x-honeycomb-dataset": "microservices-metrics"
+    otlp/dogfood-k8s:
+      endpoint: api-dogfood.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": "${HONEYCOMB_DOGFOOD_K8S_API_KEY}"
+        "x-honeycomb-dataset": "microservices-metrics"
+
+  service:
+    pipelines:
+      traces:
+        receivers:
+          - otlp
+        processors:
+          - memory_limiter
+          - filter/analyze-scenario-only
+          - k8sattributes
+          - batch
+        exporters:
+          - otlp/prod-analyze
+          - otlp/dogfood-analyze
+          - logging
+      traces/k8s-scenario:
+        receivers:
+          - otlp
+        processors:
+          - memory_limiter
+          - filter/k8s-scenario-only
+          - k8sattributes
+          - batch
+        exporters:
+          - otlp/dogfood-k8s
+          - logging
+      metrics:
+        receivers:
+          - otlp
+        exporters:
+          - otlp/prod-analyze
+          - otlp/dogfood-analyze
+          - logging
+      logs: null
+
+extraEnvs:
+  - name: HONEYCOMB_API_KEY
+    valueFrom:
+      secretKeyRef:
+        key: api-key
+        name: honeycomb-opentelemetry-collector
+  - name: HONEYCOMB_DOGFOOD_API_KEY
+    valueFrom:
+      secretKeyRef:
+        key: api-key
+        name: honeycomb-dogfood-opentelemetry-collector
+  - name: HONEYCOMB_DOGFOOD_K8S_API_KEY
+    valueFrom:
+      secretKeyRef:
+        key: api-key
+        name: honeycomb-dogfood-k8s-opentelemetry-collector
+
+ports:
+  jaeger-compact:
+    enabled: false
+  jaeger-binary:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  jaeger-http:
+    enabled: false
+  zipkin:
+    enabled: false

@@ -25,7 +25,6 @@ type CartServiceClient interface {
 	AddItem(ctx context.Context, in *AddItemRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetCart(ctx context.Context, in *GetCartRequest, opts ...grpc.CallOption) (*Cart, error)
 	EmptyCart(ctx context.Context, in *EmptyCartRequest, opts ...grpc.CallOption) (*Empty, error)
-	AuditCartService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type cartServiceClient struct {
@@ -63,15 +62,6 @@ func (c *cartServiceClient) EmptyCart(ctx context.Context, in *EmptyCartRequest,
 	return out, nil
 }
 
-func (c *cartServiceClient) AuditCartService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/msdemo.CartService/AuditCartService", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // CartServiceServer is the server API for CartService service.
 // All implementations should embed UnimplementedCartServiceServer
 // for forward compatibility
@@ -79,7 +69,6 @@ type CartServiceServer interface {
 	AddItem(context.Context, *AddItemRequest) (*Empty, error)
 	GetCart(context.Context, *GetCartRequest) (*Cart, error)
 	EmptyCart(context.Context, *EmptyCartRequest) (*Empty, error)
-	AuditCartService(context.Context, *AuditRequest) (*Empty, error)
 }
 
 // UnimplementedCartServiceServer should be embedded to have forward compatible implementations.
@@ -94,9 +83,6 @@ func (UnimplementedCartServiceServer) GetCart(context.Context, *GetCartRequest) 
 }
 func (UnimplementedCartServiceServer) EmptyCart(context.Context, *EmptyCartRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EmptyCart not implemented")
-}
-func (UnimplementedCartServiceServer) AuditCartService(context.Context, *AuditRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AuditCartService not implemented")
 }
 
 // UnsafeCartServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -164,24 +150,6 @@ func _CartService_EmptyCart_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CartService_AuditCartService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuditRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CartServiceServer).AuditCartService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/msdemo.CartService/AuditCartService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CartServiceServer).AuditCartService(ctx, req.(*AuditRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // CartService_ServiceDesc is the grpc.ServiceDesc for CartService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -201,10 +169,6 @@ var CartService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "EmptyCart",
 			Handler:    _CartService_EmptyCart_Handler,
 		},
-		{
-			MethodName: "AuditCartService",
-			Handler:    _CartService_AuditCartService_Handler,
-		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "demo.proto",
@@ -215,7 +179,6 @@ var CartService_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RecommendationServiceClient interface {
 	ListRecommendations(ctx context.Context, in *ListRecommendationsRequest, opts ...grpc.CallOption) (*ListRecommendationsResponse, error)
-	AuditRecommendationService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type recommendationServiceClient struct {
@@ -235,21 +198,11 @@ func (c *recommendationServiceClient) ListRecommendations(ctx context.Context, i
 	return out, nil
 }
 
-func (c *recommendationServiceClient) AuditRecommendationService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/msdemo.RecommendationService/AuditRecommendationService", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // RecommendationServiceServer is the server API for RecommendationService service.
 // All implementations should embed UnimplementedRecommendationServiceServer
 // for forward compatibility
 type RecommendationServiceServer interface {
 	ListRecommendations(context.Context, *ListRecommendationsRequest) (*ListRecommendationsResponse, error)
-	AuditRecommendationService(context.Context, *AuditRequest) (*Empty, error)
 }
 
 // UnimplementedRecommendationServiceServer should be embedded to have forward compatible implementations.
@@ -258,9 +211,6 @@ type UnimplementedRecommendationServiceServer struct {
 
 func (UnimplementedRecommendationServiceServer) ListRecommendations(context.Context, *ListRecommendationsRequest) (*ListRecommendationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRecommendations not implemented")
-}
-func (UnimplementedRecommendationServiceServer) AuditRecommendationService(context.Context, *AuditRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AuditRecommendationService not implemented")
 }
 
 // UnsafeRecommendationServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -292,24 +242,6 @@ func _RecommendationService_ListRecommendations_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RecommendationService_AuditRecommendationService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuditRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecommendationServiceServer).AuditRecommendationService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/msdemo.RecommendationService/AuditRecommendationService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecommendationServiceServer).AuditRecommendationService(ctx, req.(*AuditRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // RecommendationService_ServiceDesc is the grpc.ServiceDesc for RecommendationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -320,10 +252,6 @@ var RecommendationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRecommendations",
 			Handler:    _RecommendationService_ListRecommendations_Handler,
-		},
-		{
-			MethodName: "AuditRecommendationService",
-			Handler:    _RecommendationService_AuditRecommendationService_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -337,7 +265,7 @@ type ProductCatalogServiceClient interface {
 	ListProducts(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListProductsResponse, error)
 	GetProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*Product, error)
 	SearchProducts(ctx context.Context, in *SearchProductsRequest, opts ...grpc.CallOption) (*SearchProductsResponse, error)
-	AuditProductService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error)
+	AuditProducts(ctx context.Context, in *AuditProductsRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type productCatalogServiceClient struct {
@@ -375,9 +303,9 @@ func (c *productCatalogServiceClient) SearchProducts(ctx context.Context, in *Se
 	return out, nil
 }
 
-func (c *productCatalogServiceClient) AuditProductService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *productCatalogServiceClient) AuditProducts(ctx context.Context, in *AuditProductsRequest, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/msdemo.ProductCatalogService/AuditProductService", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/msdemo.ProductCatalogService/AuditProducts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -391,7 +319,7 @@ type ProductCatalogServiceServer interface {
 	ListProducts(context.Context, *Empty) (*ListProductsResponse, error)
 	GetProduct(context.Context, *GetProductRequest) (*Product, error)
 	SearchProducts(context.Context, *SearchProductsRequest) (*SearchProductsResponse, error)
-	AuditProductService(context.Context, *AuditRequest) (*Empty, error)
+	AuditProducts(context.Context, *AuditProductsRequest) (*Empty, error)
 }
 
 // UnimplementedProductCatalogServiceServer should be embedded to have forward compatible implementations.
@@ -407,8 +335,8 @@ func (UnimplementedProductCatalogServiceServer) GetProduct(context.Context, *Get
 func (UnimplementedProductCatalogServiceServer) SearchProducts(context.Context, *SearchProductsRequest) (*SearchProductsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchProducts not implemented")
 }
-func (UnimplementedProductCatalogServiceServer) AuditProductService(context.Context, *AuditRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AuditProductService not implemented")
+func (UnimplementedProductCatalogServiceServer) AuditProducts(context.Context, *AuditProductsRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AuditProducts not implemented")
 }
 
 // UnsafeProductCatalogServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -476,20 +404,20 @@ func _ProductCatalogService_SearchProducts_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProductCatalogService_AuditProductService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuditRequest)
+func _ProductCatalogService_AuditProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AuditProductsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProductCatalogServiceServer).AuditProductService(ctx, in)
+		return srv.(ProductCatalogServiceServer).AuditProducts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/msdemo.ProductCatalogService/AuditProductService",
+		FullMethod: "/msdemo.ProductCatalogService/AuditProducts",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProductCatalogServiceServer).AuditProductService(ctx, req.(*AuditRequest))
+		return srv.(ProductCatalogServiceServer).AuditProducts(ctx, req.(*AuditProductsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -514,8 +442,8 @@ var ProductCatalogService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProductCatalogService_SearchProducts_Handler,
 		},
 		{
-			MethodName: "AuditProductService",
-			Handler:    _ProductCatalogService_AuditProductService_Handler,
+			MethodName: "AuditProducts",
+			Handler:    _ProductCatalogService_AuditProducts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -528,7 +456,6 @@ var ProductCatalogService_ServiceDesc = grpc.ServiceDesc{
 type ShippingServiceClient interface {
 	GetQuote(ctx context.Context, in *GetQuoteRequest, opts ...grpc.CallOption) (*GetQuoteResponse, error)
 	ShipOrder(ctx context.Context, in *ShipOrderRequest, opts ...grpc.CallOption) (*ShipOrderResponse, error)
-	AuditShippingService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type shippingServiceClient struct {
@@ -557,22 +484,12 @@ func (c *shippingServiceClient) ShipOrder(ctx context.Context, in *ShipOrderRequ
 	return out, nil
 }
 
-func (c *shippingServiceClient) AuditShippingService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/msdemo.ShippingService/AuditShippingService", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ShippingServiceServer is the server API for ShippingService service.
 // All implementations should embed UnimplementedShippingServiceServer
 // for forward compatibility
 type ShippingServiceServer interface {
 	GetQuote(context.Context, *GetQuoteRequest) (*GetQuoteResponse, error)
 	ShipOrder(context.Context, *ShipOrderRequest) (*ShipOrderResponse, error)
-	AuditShippingService(context.Context, *AuditRequest) (*Empty, error)
 }
 
 // UnimplementedShippingServiceServer should be embedded to have forward compatible implementations.
@@ -584,9 +501,6 @@ func (UnimplementedShippingServiceServer) GetQuote(context.Context, *GetQuoteReq
 }
 func (UnimplementedShippingServiceServer) ShipOrder(context.Context, *ShipOrderRequest) (*ShipOrderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShipOrder not implemented")
-}
-func (UnimplementedShippingServiceServer) AuditShippingService(context.Context, *AuditRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AuditShippingService not implemented")
 }
 
 // UnsafeShippingServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -636,24 +550,6 @@ func _ShippingService_ShipOrder_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ShippingService_AuditShippingService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuditRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ShippingServiceServer).AuditShippingService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/msdemo.ShippingService/AuditShippingService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ShippingServiceServer).AuditShippingService(ctx, req.(*AuditRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ShippingService_ServiceDesc is the grpc.ServiceDesc for ShippingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -669,10 +565,6 @@ var ShippingService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ShipOrder",
 			Handler:    _ShippingService_ShipOrder_Handler,
 		},
-		{
-			MethodName: "AuditShippingService",
-			Handler:    _ShippingService_AuditShippingService_Handler,
-		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "demo.proto",
@@ -684,7 +576,6 @@ var ShippingService_ServiceDesc = grpc.ServiceDesc{
 type CurrencyServiceClient interface {
 	GetSupportedCurrencies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetSupportedCurrenciesResponse, error)
 	Convert(ctx context.Context, in *CurrencyConversionRequest, opts ...grpc.CallOption) (*Money, error)
-	AuditCurrencyService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type currencyServiceClient struct {
@@ -713,22 +604,12 @@ func (c *currencyServiceClient) Convert(ctx context.Context, in *CurrencyConvers
 	return out, nil
 }
 
-func (c *currencyServiceClient) AuditCurrencyService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/msdemo.CurrencyService/AuditCurrencyService", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // CurrencyServiceServer is the server API for CurrencyService service.
 // All implementations should embed UnimplementedCurrencyServiceServer
 // for forward compatibility
 type CurrencyServiceServer interface {
 	GetSupportedCurrencies(context.Context, *Empty) (*GetSupportedCurrenciesResponse, error)
 	Convert(context.Context, *CurrencyConversionRequest) (*Money, error)
-	AuditCurrencyService(context.Context, *AuditRequest) (*Empty, error)
 }
 
 // UnimplementedCurrencyServiceServer should be embedded to have forward compatible implementations.
@@ -740,9 +621,6 @@ func (UnimplementedCurrencyServiceServer) GetSupportedCurrencies(context.Context
 }
 func (UnimplementedCurrencyServiceServer) Convert(context.Context, *CurrencyConversionRequest) (*Money, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Convert not implemented")
-}
-func (UnimplementedCurrencyServiceServer) AuditCurrencyService(context.Context, *AuditRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AuditCurrencyService not implemented")
 }
 
 // UnsafeCurrencyServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -792,24 +670,6 @@ func _CurrencyService_Convert_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CurrencyService_AuditCurrencyService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuditRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CurrencyServiceServer).AuditCurrencyService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/msdemo.CurrencyService/AuditCurrencyService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CurrencyServiceServer).AuditCurrencyService(ctx, req.(*AuditRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // CurrencyService_ServiceDesc is the grpc.ServiceDesc for CurrencyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -825,10 +685,6 @@ var CurrencyService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Convert",
 			Handler:    _CurrencyService_Convert_Handler,
 		},
-		{
-			MethodName: "AuditCurrencyService",
-			Handler:    _CurrencyService_AuditCurrencyService_Handler,
-		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "demo.proto",
@@ -839,7 +695,6 @@ var CurrencyService_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PaymentServiceClient interface {
 	Charge(ctx context.Context, in *ChargeRequest, opts ...grpc.CallOption) (*ChargeResponse, error)
-	AuditPaymentService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type paymentServiceClient struct {
@@ -859,21 +714,11 @@ func (c *paymentServiceClient) Charge(ctx context.Context, in *ChargeRequest, op
 	return out, nil
 }
 
-func (c *paymentServiceClient) AuditPaymentService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/msdemo.PaymentService/AuditPaymentService", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // PaymentServiceServer is the server API for PaymentService service.
 // All implementations should embed UnimplementedPaymentServiceServer
 // for forward compatibility
 type PaymentServiceServer interface {
 	Charge(context.Context, *ChargeRequest) (*ChargeResponse, error)
-	AuditPaymentService(context.Context, *AuditRequest) (*Empty, error)
 }
 
 // UnimplementedPaymentServiceServer should be embedded to have forward compatible implementations.
@@ -882,9 +727,6 @@ type UnimplementedPaymentServiceServer struct {
 
 func (UnimplementedPaymentServiceServer) Charge(context.Context, *ChargeRequest) (*ChargeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Charge not implemented")
-}
-func (UnimplementedPaymentServiceServer) AuditPaymentService(context.Context, *AuditRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AuditPaymentService not implemented")
 }
 
 // UnsafePaymentServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -916,24 +758,6 @@ func _PaymentService_Charge_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaymentService_AuditPaymentService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuditRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PaymentServiceServer).AuditPaymentService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/msdemo.PaymentService/AuditPaymentService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaymentServiceServer).AuditPaymentService(ctx, req.(*AuditRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // PaymentService_ServiceDesc is the grpc.ServiceDesc for PaymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -945,10 +769,6 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Charge",
 			Handler:    _PaymentService_Charge_Handler,
 		},
-		{
-			MethodName: "AuditPaymentService",
-			Handler:    _PaymentService_AuditPaymentService_Handler,
-		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "demo.proto",
@@ -959,7 +779,6 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EmailServiceClient interface {
 	SendOrderConfirmation(ctx context.Context, in *SendOrderConfirmationRequest, opts ...grpc.CallOption) (*Empty, error)
-	AuditEmailService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type emailServiceClient struct {
@@ -979,21 +798,11 @@ func (c *emailServiceClient) SendOrderConfirmation(ctx context.Context, in *Send
 	return out, nil
 }
 
-func (c *emailServiceClient) AuditEmailService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/msdemo.EmailService/AuditEmailService", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // EmailServiceServer is the server API for EmailService service.
 // All implementations should embed UnimplementedEmailServiceServer
 // for forward compatibility
 type EmailServiceServer interface {
 	SendOrderConfirmation(context.Context, *SendOrderConfirmationRequest) (*Empty, error)
-	AuditEmailService(context.Context, *AuditRequest) (*Empty, error)
 }
 
 // UnimplementedEmailServiceServer should be embedded to have forward compatible implementations.
@@ -1002,9 +811,6 @@ type UnimplementedEmailServiceServer struct {
 
 func (UnimplementedEmailServiceServer) SendOrderConfirmation(context.Context, *SendOrderConfirmationRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendOrderConfirmation not implemented")
-}
-func (UnimplementedEmailServiceServer) AuditEmailService(context.Context, *AuditRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AuditEmailService not implemented")
 }
 
 // UnsafeEmailServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -1036,24 +842,6 @@ func _EmailService_SendOrderConfirmation_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EmailService_AuditEmailService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuditRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(EmailServiceServer).AuditEmailService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/msdemo.EmailService/AuditEmailService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EmailServiceServer).AuditEmailService(ctx, req.(*AuditRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // EmailService_ServiceDesc is the grpc.ServiceDesc for EmailService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1064,10 +852,6 @@ var EmailService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendOrderConfirmation",
 			Handler:    _EmailService_SendOrderConfirmation_Handler,
-		},
-		{
-			MethodName: "AuditEmailService",
-			Handler:    _EmailService_AuditEmailService_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1080,7 +864,6 @@ var EmailService_ServiceDesc = grpc.ServiceDesc{
 type CheckoutServiceClient interface {
 	PlaceOrder(ctx context.Context, in *PlaceOrderRequest, opts ...grpc.CallOption) (*PlaceOrderResponse, error)
 	GetCacheSize(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CacheSizeResponse, error)
-	AuditCheckoutService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type checkoutServiceClient struct {
@@ -1109,22 +892,12 @@ func (c *checkoutServiceClient) GetCacheSize(ctx context.Context, in *Empty, opt
 	return out, nil
 }
 
-func (c *checkoutServiceClient) AuditCheckoutService(ctx context.Context, in *AuditRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/msdemo.CheckoutService/AuditCheckoutService", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // CheckoutServiceServer is the server API for CheckoutService service.
 // All implementations should embed UnimplementedCheckoutServiceServer
 // for forward compatibility
 type CheckoutServiceServer interface {
 	PlaceOrder(context.Context, *PlaceOrderRequest) (*PlaceOrderResponse, error)
 	GetCacheSize(context.Context, *Empty) (*CacheSizeResponse, error)
-	AuditCheckoutService(context.Context, *AuditRequest) (*Empty, error)
 }
 
 // UnimplementedCheckoutServiceServer should be embedded to have forward compatible implementations.
@@ -1136,9 +909,6 @@ func (UnimplementedCheckoutServiceServer) PlaceOrder(context.Context, *PlaceOrde
 }
 func (UnimplementedCheckoutServiceServer) GetCacheSize(context.Context, *Empty) (*CacheSizeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCacheSize not implemented")
-}
-func (UnimplementedCheckoutServiceServer) AuditCheckoutService(context.Context, *AuditRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AuditCheckoutService not implemented")
 }
 
 // UnsafeCheckoutServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -1188,24 +958,6 @@ func _CheckoutService_GetCacheSize_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CheckoutService_AuditCheckoutService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuditRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CheckoutServiceServer).AuditCheckoutService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/msdemo.CheckoutService/AuditCheckoutService",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CheckoutServiceServer).AuditCheckoutService(ctx, req.(*AuditRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // CheckoutService_ServiceDesc is the grpc.ServiceDesc for CheckoutService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1220,10 +972,6 @@ var CheckoutService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCacheSize",
 			Handler:    _CheckoutService_GetCacheSize_Handler,
-		},
-		{
-			MethodName: "AuditCheckoutService",
-			Handler:    _CheckoutService_AuditCheckoutService_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

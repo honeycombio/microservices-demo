@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storageservice
+spec:
+  selector:
+    matchLabels:
+      app: storageservice
+  template:
+    metadata:
+      labels:
+        app: storageservice
+    spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: server
+        image: storageservice
+        ports:
+        - containerPort: 6381
+        env:
+        - name: PORT
+          value: "6381"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: opentelemetry-collector:4317
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: ip=$(POD_IP)
+        # readinessProbe:
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:3550"]
+        # livenessProbe:
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:3550"]
+        resources:
+          requests:
+            cpu: 100m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storageservice
+spec:
+  type: ClusterIP
+  selector:
+    app: storageservice
+  ports:
+  - name: grpc
+    port: 6381
+    targetPort: 6381
