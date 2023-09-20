@@ -16,7 +16,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
-	"math"
 	"math/rand"
 	"net"
 	"os"
@@ -155,10 +154,12 @@ func sleepRandom(max int) {
 }
 
 func memoryLeak() {
-	s1 := make([]string, math.MaxInt32)
+	log.Infof("in memoryLeak")
+	s1 := make([]string, 0)
+	s2 := make([]string, 0)
 	for {
-		//time.Sleep(1 * time.Microsecond)
+		time.Sleep(500 * time.Nanosecond)
 		s1 = append(s1, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-		log.Infof("len :%d", len(s1))
+		s2 = append(s2, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 	}
 }

@@ -15,7 +15,7 @@ resources:
 config:
   receivers:
     kubeletstats:
-      collection_interval: 10s
+      collection_interval: 5s
       metric_groups:
         - node
         - pod
