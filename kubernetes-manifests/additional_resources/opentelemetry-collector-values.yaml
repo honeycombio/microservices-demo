@@ -54,6 +54,11 @@ config:
       headers:
         "x-honeycomb-team": "${HONEYCOMB_DOGFOOD_API_KEY}"
         "x-honeycomb-dataset": "microservices-metrics"
+    otlp/prod-k8s:
+      endpoint: api.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": "${HONEYCOMB_K8S_API_KEY}"
+        "x-honeycomb-dataset": "microservices-metrics"
     otlp/dogfood-k8s:
       endpoint: api-dogfood.honeycomb.io:443
       headers:
@@ -73,7 +78,7 @@ config:
         exporters:
           - otlp/prod-analyze
           - otlp/dogfood-analyze
-          - logging
+          - debug
       traces/k8s-scenario:
         receivers:
           - otlp
@@ -83,15 +88,16 @@ config:
           - k8sattributes
           - batch
         exporters:
+          - otlp/prod-k8s
           - otlp/dogfood-k8s
-          - logging
+          - debug
       metrics:
         receivers:
           - otlp
         exporters:
           - otlp/prod-analyze
           - otlp/dogfood-analyze
-          - logging
+          - debug
       logs: null
 
 extraEnvs:
@@ -105,6 +111,11 @@ extraEnvs:
       secretKeyRef:
         key: api-key
         name: honeycomb-dogfood-opentelemetry-collector
+  - name: HONEYCOMB_K8S_API_KEY
+    valueFrom:
+      secretKeyRef:
+        key: api-key
+        name: honeycomb-k8s-opentelemetry-collector
   - name: HONEYCOMB_DOGFOOD_K8S_API_KEY
     valueFrom:
       secretKeyRef:

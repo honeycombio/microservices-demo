@@ -59,6 +59,16 @@ config:
       headers:
         "x-honeycomb-team": "${env:HONEYCOMB_DOGFOOD_K8S_API_KEY}"
         "x-honeycomb-dataset": "kubernetes-events"
+    otlp/prod-k8s-metrics:
+      endpoint: api.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": "${env:HONEYCOMB_K8S_API_KEY}"
+        "x-honeycomb-dataset": "kubernetes-metrics"
+    otlp/prod-k8s-events:
+      endpoint: api.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": "${env:HONEYCOMB_K8S_API_KEY}"
+        "x-honeycomb-dataset": "kubernetes-events"
 
   service:
     pipelines:
@@ -67,9 +77,10 @@ config:
         receivers:
           - k8s_cluster
         exporters:
+          - otlp/prod-k8s-metrics
           - otlp/dogfood-analyze-metrics
           - otlp/dogfood-k8s-metrics
-          - logging
+          - debug
       logs:
         receivers:
           - k8sobjects
@@ -78,9 +89,10 @@ config:
           - transform/events
           - batch
         exporters:
+          - otlp/prod-k8s-events
           - otlp/dogfood-analyze-events
           - otlp/dogfood-k8s-events
-          - logging
+          - debug
 
 extraEnvs:
   - name: HONEYCOMB_DOGFOOD_API_KEY
@@ -88,6 +100,11 @@ extraEnvs:
       secretKeyRef:
         key: api-key
         name: honeycomb-dogfood-opentelemetry-collector
+  - name: HONEYCOMB_K8S_API_KEY
+    valueFrom:
+      secretKeyRef:
+        key: api-key
+        name: honeycomb-k8s-opentelemetry-collector
   - name: HONEYCOMB_DOGFOOD_K8S_API_KEY
     valueFrom:
       secretKeyRef:
