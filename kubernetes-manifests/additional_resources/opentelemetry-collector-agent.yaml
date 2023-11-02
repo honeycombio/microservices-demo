@@ -44,6 +44,11 @@ config:
       headers:
         "x-honeycomb-team": "${env:HONEYCOMB_K8S_API_KEY}"
         "x-honeycomb-dataset": "kubernetes-metrics"
+    otlp/demoteam-k8s-metrics:
+      endpoint: api.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": "${env:HONEYCOMB_DEMOTEAM_K8S_API_KEY}"
+        "x-honeycomb-dataset": "kubernetes-metrics"
 
   service:
     pipelines:
@@ -53,6 +58,7 @@ config:
           - kubeletstats
         exporters:
           - otlp/prod-k8s-metrics
+          - otlp/demoteam-k8s-metrics
           - otlp/dogfood-k8s-metrics
           - otlp/dogfood-analyze-metrics
           - debug
@@ -74,6 +80,11 @@ extraEnvs:
       secretKeyRef:
         key: api-key
         name: honeycomb-dogfood-k8s-opentelemetry-collector
+  - name: HONEYCOMB_DEMOTEAM_K8S_API_KEY
+    valueFrom:
+      secretKeyRef:
+        key: api-key
+        name: honeycomb-demoteam-k8s-opentelemetry-collector
 
 ports:
   otlp:
