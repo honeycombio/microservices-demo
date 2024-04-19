@@ -1,0 +1,9 @@
+{"timestamp": 1713490268.1595368, "severity": "INFO", "name": "recommendationservice-server", "message": "initializing recommendationservice", "taskName": null}
+{"timestamp": 1713490268.159688, "severity": "ERROR", "name": "recommendationservice-server", "message": "Error creating resource: Environment variable 'SERVICE_NAME' is missing.", "taskName": null}
+{"timestamp": 1713491158.377873, "severity": "INFO", "name": "recommendationservice-server", "message": "initializing recommendationservice", "taskName": null}
+{"timestamp": 1713491158.378029, "severity": "ERROR", "name": "recommendationservice-server", "message": "Error creating resource: Environment variable 'SERVICE_NAME' is missing.", "taskName": null}
+{"timestamp": 1713491192.3613691, "severity": "INFO", "name": "recommendationservice-server", "message": "initializing recommendationservice", "taskName": null}
+{"timestamp": 1713491192.3615181, "severity": "ERROR", "name": "recommendationservice-server", "message": "Error creating resource: Environment variable 'POD_IP' is missing.", "taskName": null}
+{"timestamp": 1713491205.316926, "severity": "INFO", "name": "recommendationservice-server", "message": "initializing recommendationservice", "taskName": null}
+{"timestamp": 1713491205.319937, "severity": "INFO", "name": "recommendationservice-server", "message": "product catalog address: dew", "taskName": null}
+{"timestamp": 1713491205.3224142, "severity": "INFO", "name": "recommendationservice-server", "message": "listening on port: 8080", "taskName": null}

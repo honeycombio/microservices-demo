@@ -28,7 +28,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from logger import getJSONLogger
 
-logger = getJSONLogger('recommendationservice-server')
+logger = getJSONLogger('recommendationservice-server', log_filename='recommendationservice.log')
 
 worker_pool = futures.ThreadPoolExecutor(max_workers=10)
 
@@ -101,54 +101,74 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
 if __name__ == "__main__":
     logger.info("initializing recommendationservice")
 
-    # create Resource attributes used by the OpenTelemetry SDK
-    resource = Resource(attributes={
-        "service.name": os.environ.get("SERVICE_NAME"),
-        "service.version": "0.1", "ip": os.environ.get('POD_IP')
-    })
-
-    # create the OTLP exporter to send data an insecure OpenTelemetry Collector
-    otlp_exporter = OTLPSpanExporter(
-        endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
-        insecure=True
-    )
-
-    # create a Trace Provider
-    trace_provider = TracerProvider(resource=resource)
-    trace_provider.add_span_processor(
-        BatchSpanProcessor(otlp_exporter)
-    )
-
-    # set the Trace Provider to be used by the OpenTelemetry SDK
-    trace.set_tracer_provider(trace_provider)
-
-    # Add OpenTelemetry auto-instrumentation hooks for gRPC client and server communications
-    client_instrumentor = GrpcInstrumentorClient().instrument()
-    server_instrumentor = GrpcInstrumentorServer().instrument()
-
-    catalog_addr = os.environ.get('PRODUCT_CATALOG_SERVICE_ADDR', '')
-    if catalog_addr == "":
-        raise Exception('PRODUCT_CATALOG_SERVICE_ADDR environment variable not set')
-    logger.info("product catalog address: " + catalog_addr)
-    channel = grpc.insecure_channel(catalog_addr)
-    product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel)
-
-    server = grpc.server(worker_pool)
-
-    # add class to gRPC server
-    service = RecommendationService()
-    demo_pb2_grpc.add_RecommendationServiceServicer_to_server(service, server)
-    health_pb2_grpc.add_HealthServicer_to_server(service, server)
-
-    # start server
-    port = os.environ.get('PORT', "8080")
-    logger.info("listening on port: " + port)
-    server.add_insecure_port('[::]:' + port)
-    server.start()
-
-    # keep alive
     try:
-        while True:
-            time.sleep(10000)
-    except KeyboardInterrupt:
-        server.stop(0)
+        # Attempt to retrieve environment variables
+        service_name = os.environ.get("SERVICE_NAME")
+        pod_ip = os.environ.get("POD_IP")
+
+        # Check if the environment variables are provided
+        if service_name is None:
+            raise ValueError("Environment variable 'SERVICE_NAME' is missing.")
+        if pod_ip is None:
+            raise ValueError("Environment variable 'POD_IP' is missing.")
+
+        # create Resource attributes used by the OpenTelemetry SDK
+        resource = Resource(attributes={
+            "service.name": service_name,
+            "service.version": "0.1",
+            "ip": pod_ip
+        })
+    except ValueError as ve:
+        # Log the specific error and re-raise it
+        logger.error(f"Error creating resource: {str(ve)}")
+        raise
+    except Exception as e:
+        # Catch any other unexpected errors
+        logger.error("Error creating resource: " + str(e))
+        raise
+    else:
+        # create the OTLP exporter to send data an insecure OpenTelemetry Collector
+        otlp_exporter = OTLPSpanExporter(
+            endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
+            insecure=True
+        )
+
+        # create a Trace Provider
+        trace_provider = TracerProvider(resource=resource)
+        trace_provider.add_span_processor(
+            BatchSpanProcessor(otlp_exporter)
+        )
+
+        # set the Trace Provider to be used by the OpenTelemetry SDK
+        trace.set_tracer_provider(trace_provider)
+
+        # Add OpenTelemetry auto-instrumentation hooks for gRPC client and server communications
+        client_instrumentor = GrpcInstrumentorClient().instrument()
+        server_instrumentor = GrpcInstrumentorServer().instrument()
+
+        catalog_addr = os.environ.get('PRODUCT_CATALOG_SERVICE_ADDR', '')
+        if catalog_addr == "":
+            raise Exception('PRODUCT_CATALOG_SERVICE_ADDR environment variable not set')
+        logger.info("product catalog address: " + catalog_addr)
+        channel = grpc.insecure_channel(catalog_addr)
+        product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel)
+
+        server = grpc.server(worker_pool)
+
+        # add class to gRPC server
+        service = RecommendationService()
+        demo_pb2_grpc.add_RecommendationServiceServicer_to_server(service, server)
+        health_pb2_grpc.add_HealthServicer_to_server(service, server)
+
+        # start server
+        port = os.environ.get('PORT', "8080")
+        logger.info("listening on port: " + port)
+        server.add_insecure_port('[::]:' + port)
+        server.start()
+
+        # keep alive
+        try:
+            while True:
+                time.sleep(10000)
+        except KeyboardInterrupt:
+            server.stop(0)
