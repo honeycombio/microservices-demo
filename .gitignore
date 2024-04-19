@@ -16,3 +16,4 @@ kubernetes-manifests/secrets.yaml
 secrets/
 node_modules/
 .parcel-cache/
+*.log
