@@ -4,24 +4,25 @@
   "description": "Currency Microservice demo",
   "repository": "https://github.com/honeycombio/microservices-demo",
   "scripts": {
+    "start": "node -r ./tracing.js server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "semistandard *.js"
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "@grpc/grpc-js": "1.5.7",
-    "@grpc/proto-loader": "0.6.9",
-    "@opentelemetry/api": "1.0.4",
-    "@opentelemetry/auto-instrumentations-node": "0.27.4",
+    "@grpc/grpc-js": "1.10.6",
+    "@grpc/proto-loader": "0.7.12",
+    "@opentelemetry/api": "1.8.0",
+    "@opentelemetry/auto-instrumentations-node": "0.44.0",
     "@opentelemetry/exporter-collector-grpc": "0.25.0",
-    "@opentelemetry/sdk-node": "0.27.0",
-    "async": "3.2.3",
-    "google-protobuf": "3.19.4",
-    "pino": "7.8.0",
+    "@opentelemetry/sdk-node": "0.50.0",
+    "async": "3.2.5",
+    "google-protobuf": "3.21.2",
+    "pino": "8.20.0",
     "request": "2.88.2",
-    "xml2js": "0.4.23"
+    "xml2js": "0.6.2"
   },
   "devDependencies": {
-    "semistandard": "^16.0.1"
+    "semistandard": "^17.0.0"
   }
 }
