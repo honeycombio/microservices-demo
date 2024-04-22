@@ -59,11 +59,6 @@ config:
       headers:
         "x-honeycomb-team": "${HONEYCOMB_K8S_API_KEY}"
         "x-honeycomb-dataset": "microservices-metrics"
-    otlp/demoteam-k8s:
-      endpoint: api.honeycomb.io:443
-      headers:
-        "x-honeycomb-team": "${HONEYCOMB_DEMOTEAM_K8S_API_KEY}"
-        "x-honeycomb-dataset": "microservices-metrics"
     otlp/dogfood-k8s:
       endpoint: api-dogfood.honeycomb.io:443
       headers:
@@ -94,7 +89,6 @@ config:
           - batch
         exporters:
           - otlp/prod-k8s
-          - otlp/demoteam-k8s
           - otlp/dogfood-k8s
           - debug
       metrics:
@@ -127,11 +121,6 @@ extraEnvs:
       secretKeyRef:
         key: api-key
         name: honeycomb-dogfood-k8s-opentelemetry-collector
-  - name: HONEYCOMB_DEMOTEAM_K8S_API_KEY
-    valueFrom:
-      secretKeyRef:
-        key: api-key
-        name: honeycomb-demoteam-k8s-opentelemetry-collector
 
 ports:
   jaeger-compact:
