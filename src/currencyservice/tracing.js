@@ -5,10 +5,11 @@ const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
-const { CollectorTraceExporter } = require("@opentelemetry/exporter-collector-grpc");
+const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
+
 
 // Create an OpenTelemetry Collector exporter for traces
-const traceExporter = new CollectorTraceExporter({
+const traceExporter = new OTLPTraceExporter({
   url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT
 });
 
@@ -19,13 +20,21 @@ const sdk = new NodeSDK({
     [ 'ip' ]: process.env.POD_IP,
   }),
   traceExporter,
-  instrumentations: [getNodeAutoInstrumentations()] // enable all Auto Instrumentations
+  instrumentations: [getNodeAutoInstrumentations(
+    {
+      '@opentelemetry/instrumentation-fs': {
+        enabled: false, // disable fs events
+      }
+    }
+  )] 
 });
 
-// Start the OpenTelemetry tracing SDK
-sdk.start()
-    .then(() => console.log('Tracing initialized'))
-    .catch((error) => console.log('Error initializing tracing', error));
+try {
+  sdk.start();
+  console.log('Tracing initialized');
+} catch (error) {
+  console.log('Error initializing tracing', error);
+}
 
 // On shutdown, ensure we flush all telemetry first
 process.on('SIGTERM', () => {
