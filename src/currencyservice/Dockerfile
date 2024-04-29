@@ -1,4 +1,4 @@
-FROM node:12-alpine as base
+FROM node:22-alpine as base
 
 FROM base as builder
 
@@ -11,7 +11,8 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-RUN npm install --only=production
+# RUN npm config set registry https://registry.npmjs.org/
+RUN npm ci
 
 FROM base
 

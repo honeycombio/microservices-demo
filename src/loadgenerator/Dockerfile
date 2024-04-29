@@ -1,10 +1,12 @@
-FROM python:3.8-slim as base
+FROM python:3.12-slim as base
 
 FROM base as builder
 
+RUN chmod 1777 /tmp
+
 RUN apt-get -qq update \
     && apt-get install -y --no-install-recommends \
-        g++
+    g++
 
 COPY requirements.txt .
 
@@ -17,5 +19,5 @@ COPY . .
 RUN chmod +x ./loadgen.sh
 RUN apt-get -qq update \
     && apt-get install -y --no-install-recommends \
-        curl
+    curl
 ENTRYPOINT ./loadgen.sh
