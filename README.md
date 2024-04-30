@@ -1,8 +1,3 @@
-<p align="center">
-<img src="src/frontend/static/icons/Hipster_HeroLogoCyan.svg" width="300" alt="Online Boutique" />
-</p>
-
-
 **[Online Boutique](https://microservices.honeydemo.io)** is a cloud-native microservices demo application. Online
 Boutique consists of a 10-tier microservices application, writen in 5 different languages: Go, Java, .NET, Node, and
 Python. The application is a web-based e-commerce platform where users can browse items, add them to a cart, and
@@ -12,17 +7,22 @@ purchase them.
 and OpenTelemetry. This application works on any Kubernetes cluster. It’s **easy to deploy with little to no
 configuration**.
 
-## Screenshots
-
-| Home Page                                                                                                               | Checkout Screen                                                                                                          |
-|-------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| [![Screenshot of store homepage](./docs/img/online-boutique-frontend-1.png)](./docs/img/online-boutique-frontend-1.png) | [![Screenshot of checkout screen](./docs/img/online-boutique-frontend-2.png)](./docs/img/online-boutique-frontend-2.png) |
-
 ## OpenTelemetry
 
 Online Boutique is instrumented using the [OpenTelemetry](https://opentelemetry.io) framework. There are simple and
 advanced instrumentation techniques offered by OpenTelemetry that are leveraged in the application. Each service in
 the [src](./src) folder explains how OpenTelemetry was used with specific code examples.
+
+## Table of Contents
+
+- [Development](#development)
+  - [Prerequisites](#prerequisites)
+  - [Kubernetes Quickstart](#kubernetes-quickstart)
+  - [Cleanup](#cleanup)
+- [Architecture](#architecture)
+- [Features](#features)
+- [History](#history)
+- [Application demo](#application-demo)
 
 ## Development
 
@@ -30,51 +30,46 @@ the [src](./src) folder explains how OpenTelemetry was used with specific code e
 
 - [Docker for Desktop](https://www.docker.com/products/docker-desktop)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl), a CLI to interact with Kubernetes
-- [skaffold]( https://skaffold.dev/docs/install/), a tool that builds and deploys Docker images in bulk
+- [skaffold](https://skaffold.dev/docs/install/), a tool that builds and deploys Docker images in bulk
 - [Helm](https://helm.sh), a package manager for Kubernetes
 
-### Install
+### Kubernetes Quickstart
 
-1. Launch a local Kubernetes cluster with one of the following options:
+1. Launch Kubernetes cluster with Docker Desktop or Minikube:
 
-- To launch **Minikube** (tested with Ubuntu Linux). Please, ensure that the local Kubernetes cluster has at least:
-    - 4 CPUs
-    - 4.0 GiB memory
-    - 32 GB disk space
-```shell
-minikube start --cpus=4 --memory 4096 --disk-size 32g
-```
-
-- To launch **Docker for Desktop** (tested with Mac/Windows). Go to Preferences:
-    - choose “Enable Kubernetes”,
-    - set CPUs to at least 3, and Memory to at least 6.0 GiB
-    - on the "Disk" tab, set at least 32 GB disk space
+   1. Launch **Docker Desktop**. Go to Preferences:
+      - choose “Enable Kubernetes”,
+      - set CPUs to at least 3, and Memory to at least 6.0 GiB
+      - on the "Disk" tab, set at least 32 GB disk space
+   2. To launch **Minikube** (tested with Ubuntu Linux). Please, ensure that the local Kubernetes cluster has at least:
+      - 4 CPUs
+      - 4.0 GiB memory
+      - 32 GB disk space
+      ```shell
+      minikube start --cpus=4 --memory 4096 --disk-size 32g
+      ```
 
 2. Run `kubectl get nodes` to verify you're connected to the respective control plane.
 
-3. Install the [OpenTelemetry Collector Helm chart](https://github.com/honeycombio/helm-charts/tree/main/charts/opentelemetry-collector) from Honeycomb.
-   Specify your Honeycomb API key when installing the Helm chart.
+3. Install the [OpenTelemetry Collector Helm chart](https://opentelemetry.io/docs/kubernetes/helm/collector/).
+
 ```shell
-helm repo add honeycomb https://honeycombio.github.io/helm-charts
-helm install opentelemetry-collector honeycomb/opentelemetry-collector \
-      --set honeycomb.apiKey=YOUR_API_KEY \
-      --values ./kubernetes-manifests/additional_resources/opentelemetry-collector-values.yaml
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+
+helm install opentelemetry-collector open-telemetry/opentelemetry-collector \
+   --set mode=deployment \
+   --set image.repository="otel/opentelemetry-collector-k8s" \
+ --values ./kubernetes-manifests/additional_resources/opentelemetry-collector-values.yaml
 ```
 
-4. Run `skaffold run` (first time will be slow, it can take ~20 minutes). This will build and deploy the application. 
+4. Run `skaffold run` (Note: first time will be slow, it can take ~20 minutes). This will build and deploy the application.
    If you need to rebuild the images automatically as you refactor the code, run `skaffold dev` command.
 
 5. Run `kubectl get pods` to verify the Pods are ready and running.
 
-6. Access the web frontend through your browser
-
-- **Minikube** requires you to run a command to access the frontend service:
-```shell
-minikube service frontend-external
-```
-
-- **Docker For Desktop** should automatically provide the frontend at http://localhost:80
-
+6. Access the web frontend through your browser.
+   1. **Docker For Desktop** should automatically provide the frontend at http://localhost:80
+   2. **Minikube** will require you to run `minikube service frontend-external` to access the frontend.
 
 ### Cleanup
 
@@ -89,7 +84,7 @@ If you've deployed the application with `skaffold run` command, you can run `ska
 Find **Protocol Buffers Descriptions** at the [`./pb` directory](./pb).
 
 | Service                                              | Language      | Description                                                                                                                       |
-|------------------------------------------------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| ---------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | [adservice](./src/adservice)                         | Java          | Provides text ads based on given context words.                                                                                   |
 | [cartservice](./src/cartservice)                     | C#            | Stores the items in the user's shopping cart in Redis and retrieves it.                                                           |
 | [checkoutservice](./src/checkoutservice)             | Go            | Retrieves user cart, prepares order and orchestrates the payment, shipping and the email notification.                            |
@@ -130,7 +125,7 @@ Honeycomb platform.
 This application will exhibit a problem meant to be discovered with ease using the [Honeycomb](https://honeycomb.io)
 platform.
 
-The checkout service has a memory leak, cause by an internal cache store. This service has tight Kubernetes
+The checkout service has a memory leak, caused by an internal cache store. This service has tight Kubernetes
 pod/container memory limits, so the leak will cause out of memory crashes, resulting in a pod restart after
 approximately 4 hours. Code in the checkout service will introduce additional delays in the form of SQL calls
 under `getDiscounts`. The number of SQL calls made will increase as the cache size increases, creating exponentially
@@ -142,7 +137,6 @@ When using Honeycomb BubbleUp, and combined with the Honeycomb SLO feature, unde
 cardinality pool of thousands of user ids is easy to do. Honeycomb allows the user to ask novel questions from the data,
 to quickly understand the memory leak and cache problem in code.
 
-
 ---
 
-This is not an official Honeycomb or Google project.
+**This is not an official Honeycomb or Google project.**
