@@ -1,7 +1,7 @@
-FROM python:3.7-slim
+FROM python:3.12-slim as base
 RUN apt-get update -qqy && \
-	apt-get -qqy install wget g++ && \
-	rm -rf /var/lib/apt/lists/*
+    apt-get -qqy install wget g++ && \
+    rm -rf /var/lib/apt/lists/*
 # show python logs as they occur
 ENV PYTHONUNBUFFERED=0
 

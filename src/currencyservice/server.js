@@ -155,7 +155,6 @@ function main() {
         grpc.ServerCredentials.createInsecure(),
         function () {
             logger.info(`CurrencyService gRPC server started on port ${PORT}`);
-            server.start();
         },
     );
 }
