@@ -1,11 +1,11 @@
-FROM node:22-alpine as base
+FROM node:22-bullseye as base
 
 FROM base as builder
 
-RUN apk add --update --no-cache \
+RUN apt-get update && apt-get install -y \
     python3 \
-    make \
-    g++
+    g++ \
+    make
 
 WORKDIR /usr/src/app
 
