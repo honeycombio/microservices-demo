@@ -51,7 +51,15 @@ the [src](./src) folder explains how OpenTelemetry was used with specific code e
 
 2. Run `kubectl get nodes` to verify you're connected to the respective control plane.
 
-3. Install the [OpenTelemetry Collector Helm chart](https://opentelemetry.io/docs/kubernetes/helm/collector/).
+3. Add your Honeycomb API key as a secret from the command line. Replace `$HONEYCOMB_API_KEY` with your actual API key.
+   For example, if your API key is `abc123`, run the following command:
+
+```shell
+export HONEYCOMB_API_KEY=abc123
+kubectl create secret generic honeycomb --from-literal=api-key=$HONEYCOMB_API_KEY
+```
+
+4. Install the [OpenTelemetry Collector Helm chart](https://opentelemetry.io/docs/kubernetes/helm/collector/).
 
 ```shell
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
@@ -62,12 +70,12 @@ helm install opentelemetry-collector open-telemetry/opentelemetry-collector \
  --values ./kubernetes-manifests/additional_resources/opentelemetry-collector-values.yaml
 ```
 
-4. Run `skaffold run` (Note: first time will be slow, it can take ~20 minutes). This will build and deploy the application.
+5. Run `skaffold run` (Note: first time will be slow, it can take ~20 minutes). This will build and deploy the application.
    If you need to rebuild the images automatically as you refactor the code, run `skaffold dev` command.
 
-5. Run `kubectl get pods` to verify the Pods are ready and running.
+6. Run `kubectl get pods` to verify the Pods are ready and running.
 
-6. Access the web frontend through your browser.
+7. Access the web frontend through your browser.
    1. **Docker For Desktop** should automatically provide the frontend at http://localhost:80
    2. **Minikube** will require you to run `minikube service frontend-external` to access the frontend.
 
