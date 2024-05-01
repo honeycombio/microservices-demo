@@ -3,7 +3,6 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 
-from opentelemetry._logs import set_logger_provider
 from opentelemetry.exporter.otlp.proto.grpc._log_exporter import \
     OTLPLogExporter
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
