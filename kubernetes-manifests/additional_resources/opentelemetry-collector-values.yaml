@@ -119,7 +119,7 @@ config:
         processors: [ memory_limiter, resourcedetection, batch ]
         exporters: [ otlp/otelmetrics ]
       logs:
-        receivers: [filelog]
-        processors: [memory_limiter, resourcedetection, batch]
+        receivers: [otlp]
+        processors: [memory_limiter, resourcedetection]
         exporters: [otlp/logs]
         

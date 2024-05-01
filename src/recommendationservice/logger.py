@@ -1,8 +1,18 @@
-#!/usr/bin/python
 import logging
+import os
 import sys
 from logging.handlers import RotatingFileHandler
+
+from opentelemetry._logs import set_logger_provider
+from opentelemetry.exporter.otlp.proto.grpc._log_exporter import \
+    OTLPLogExporter
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from pythonjsonlogger import jsonlogger
+
 
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
     def add_fields(self, log_record, record, message_dict):
@@ -31,5 +41,15 @@ def getJSONLogger(name, log_filename):
     file_handler = RotatingFileHandler(log_filename, maxBytes=102400)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
+
+    # OpenTelemetry log exporter
+    logger_provider = LoggerProvider()
+    # set_logger_provider(logger_provider)
+    otlp_log_exporter = OTLPLogExporter(
+        endpoint=os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT'),
+        insecure=True)
+    logger_provider.add_log_record_processor(BatchLogRecordProcessor(otlp_log_exporter))
+    otel_log_handler = LoggingHandler(logger_provider=logger_provider)
+    logger.addHandler(otel_log_handler)
 
     return logger
