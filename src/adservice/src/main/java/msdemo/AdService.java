@@ -19,7 +19,7 @@ import io.grpc.stub.StreamObserver;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.extension.annotations.WithSpan;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,7 +30,6 @@ import java.util.Random;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 
 public final class AdService {
 
@@ -49,19 +48,19 @@ public final class AdService {
         healthMgr = new HealthStatusManager();
 
         logger.info("Building server on " + port);
-        server =
-                ServerBuilder.forPort(port)
-                        .addService(new AdServiceImpl())
-                        .addService(healthMgr.getHealthService())
-                        .build()
-                        .start();
+        server = ServerBuilder.forPort(port)
+                .addService(new AdServiceImpl())
+                .addService(healthMgr.getHealthService())
+                .build()
+                .start();
 
         logger.info("Ad Service started, listening on " + port);
         Runtime.getRuntime()
                 .addShutdownHook(
                         new Thread(
                                 () -> {
-                                    // Use stderr here since the logger may have been reset by its JVM shutdown hook.
+                                    // Use stderr here since the logger may have been reset by its JVM shutdown
+                                    // hook.
                                     System.err.println(
                                             "*** shutting down gRPC ads server since JVM is shutting down");
                                     AdService.this.stop();
@@ -73,7 +72,7 @@ public final class AdService {
 
     private static float getRandomWaitTime(int max, int buckets) {
         float num = 0;
-        float val = max / (float)buckets;
+        float val = max / (float) buckets;
         for (int i = 0; i < buckets; i++) {
             num += Math.random() * val;
         }
@@ -112,12 +111,13 @@ public final class AdService {
          * Retrieves ads based on context provided in the request {@code AdRequest}.
          *
          * @param req              the request containing context.
-         * @param responseObserver the stream observer which gets notified with the value of {@code
+         * @param responseObserver the stream observer which gets notified with the
+         *                         value of {@code
          *                         AdResponse}
          */
         @Override
         // Wrap function in an OpenTelemetry span
-        @WithSpan  //results in a span name of AdServiceImpl.getAds
+        @WithSpan // results in a span name of AdServiceImpl.getAds
         public void getAds(AdRequest req, StreamObserver<AdResponse> responseObserver) {
             AdService service = AdService.getInstance();
 
@@ -195,7 +195,8 @@ public final class AdService {
     }
 
     /**
-     * Await termination on the main thread since the grpc library uses daemon threads.
+     * Await termination on the main thread since the grpc library uses daemon
+     * threads.
      */
     private void blockUntilShutdown() throws InterruptedException {
         if (server != null) {
@@ -204,41 +205,34 @@ public final class AdService {
     }
 
     private static ImmutableListMultimap<String, Ad> createAdsMap() {
-        Ad camera =
-                Ad.newBuilder()
-                        .setRedirectUrl("/product/2ZYFJ3GM2N")
-                        .setText("Film camera for sale. 50% off.")
-                        .build();
-        Ad lens =
-                Ad.newBuilder()
-                        .setRedirectUrl("/product/66VCHSJNUP")
-                        .setText("Vintage camera lens for sale. 20% off.")
-                        .build();
-        Ad recordPlayer =
-                Ad.newBuilder()
-                        .setRedirectUrl("/product/0PUK6V6EV0")
-                        .setText("Vintage record player for sale. 30% off.")
-                        .build();
-        Ad bike =
-                Ad.newBuilder()
-                        .setRedirectUrl("/product/9SIQT8TOJO")
-                        .setText("City Bike for sale. 10% off.")
-                        .build();
-        Ad baristaKit =
-                Ad.newBuilder()
-                        .setRedirectUrl("/product/1YMWWN1N4O")
-                        .setText("Home Barista kitchen kit for sale. Buy one, get second kit for free")
-                        .build();
-        Ad airPlant =
-                Ad.newBuilder()
-                        .setRedirectUrl("/product/6E92ZMYYFZ")
-                        .setText("Air plants for sale. Buy two, get third one for free")
-                        .build();
-        Ad terrarium =
-                Ad.newBuilder()
-                        .setRedirectUrl("/product/L9ECAV7KIM")
-                        .setText("Terrarium for sale. Buy one, get second one for free")
-                        .build();
+        Ad camera = Ad.newBuilder()
+                .setRedirectUrl("/product/2ZYFJ3GM2N")
+                .setText("Film camera for sale. 50% off.")
+                .build();
+        Ad lens = Ad.newBuilder()
+                .setRedirectUrl("/product/66VCHSJNUP")
+                .setText("Vintage camera lens for sale. 20% off.")
+                .build();
+        Ad recordPlayer = Ad.newBuilder()
+                .setRedirectUrl("/product/0PUK6V6EV0")
+                .setText("Vintage record player for sale. 30% off.")
+                .build();
+        Ad bike = Ad.newBuilder()
+                .setRedirectUrl("/product/9SIQT8TOJO")
+                .setText("City Bike for sale. 10% off.")
+                .build();
+        Ad baristaKit = Ad.newBuilder()
+                .setRedirectUrl("/product/1YMWWN1N4O")
+                .setText("Home Barista kitchen kit for sale. Buy one, get second kit for free")
+                .build();
+        Ad airPlant = Ad.newBuilder()
+                .setRedirectUrl("/product/6E92ZMYYFZ")
+                .setText("Air plants for sale. Buy two, get third one for free")
+                .build();
+        Ad terrarium = Ad.newBuilder()
+                .setRedirectUrl("/product/L9ECAV7KIM")
+                .setText("Terrarium for sale. Buy one, get second one for free")
+                .build();
         return ImmutableListMultimap.<String, Ad>builder()
                 .putAll("photography", camera, lens)
                 .putAll("vintage", camera, lens, recordPlayer)

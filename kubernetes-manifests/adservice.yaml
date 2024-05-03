@@ -25,11 +25,22 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        - name: HONEYCOMB_API_ENDPOINT
+        - name: HONEYCOMB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: honeycomb
+              key: api-key
+        - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+          value: grpc
+        - name: OTEL_EXPORTER_OTLP_LOGS_PROTOCOL
+          value: grpc
+        - name: OTEL_TRACES_EXPORTER
+          value: otlp
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: http://opentelemetry-collector:4317
-        - name: HONEYCOMB_METRICS_DATASET
-          value: microservices-metrics
-        - name: SERVICE_NAME
+        - name: OTEL_LOGS_EXPORTER
+          value: otlp
+        - name: OTEL_SERVICE_NAME
           value: adservice
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: ip=$(POD_IP)
