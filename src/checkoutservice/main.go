@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -78,15 +77,15 @@ func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.Trac
 	// Set GRPC options to establish an insecure connection to an OpenTelemetry Collector
 	// To establish a TLS connection to a secured endpoint use:
 	//   otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, ""))
-	opts := []otlptracegrpc.Option{
-		otlptracegrpc.WithEndpoint(endpoint),
-		otlptracegrpc.WithInsecure(),
-	}
 
 	// Create the exporter
-	exporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(opts...))
+	exporter, err := otlptracegrpc.New(
+		ctx,
+		otlptracegrpc.WithEndpoint(endpoint),
+		otlptracegrpc.WithInsecure(),
+	)
 	if err != nil {
-		log.Fatal(err)
+		log.Warnf("warn: Failed to create trace exporter: %v", err)
 	}
 
 	// Specify the TextMapPropagator to ensure spans propagate across service boundaries
