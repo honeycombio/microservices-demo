@@ -18,7 +18,8 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
 def getJSONLogger(name):
     logger = logging.getLogger(name)
     handler = logging.StreamHandler(sys.stdout)
-    formatter = CustomJsonFormatter('(timestamp) (severity) (name) (message)')
+    # Pass the format as a format string with curly braces
+    formatter = CustomJsonFormatter(fmt='%(timestamp)s %(severity)s %(name)s %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
