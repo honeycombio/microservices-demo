@@ -1,5 +1,5 @@
 const cardValidator = require('simple-card-validator');
-const uuid = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 const pino = require('pino');
 
 const logger = pino({
@@ -43,27 +43,35 @@ class ExpiredCreditCard extends CreditCardError {
  */
 module.exports = async function charge (request) {
   const { amount, credit_card: creditCard } = request;
-  const cardNumber = creditCard.credit_card_number;
+  const { credit_card_number: cardNumber, credit_card_expiration_year: year, credit_card_expiration_month: month } = creditCard;
+  
   const cardInfo = cardValidator(cardNumber);
-  const {
-    card_type: cardType,
-    valid
-  } = cardInfo.getCardDetails();
-
-  if (!valid) { throw new InvalidCreditCard(); }
-
-  // Only VISA and mastercard is accepted, other card types (AMEX, dinersclub) will
-  // throw UnacceptedCreditCard error.
-  if (!(cardType === 'visa' || cardType === 'mastercard')) { throw new UnacceptedCreditCard(cardType); }
-
-  // Also validate expiration is > today.
-  const currentMonth = new Date().getMonth() + 1;
-  const currentYear = new Date().getFullYear();
-  const { credit_card_expiration_year: year, credit_card_expiration_month: month } = creditCard;
-  if ((currentYear * 12 + currentMonth) > (year * 12 + month)) { throw new ExpiredCreditCard(cardNumber.replace('-', ''), month, year); }
-
-  logger.info(`Transaction processed: ${cardType} ending ${cardNumber.substr(-4)} \
-    Amount: ${amount.currency_code}${amount.units}.${amount.nanos}`);
-
-  return { transaction_id: uuid() };
+  const { card_type: cardType, valid } = cardInfo.getCardDetails();
+  
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
+  
+  if (!valid) {
+    logger.error('Invalid credit card detected');
+    return { error: 'InvalidCreditCard', message: 'The credit card provided is invalid.' };
+  }
+  
+  // Only VISA and Mastercard are accepted
+  if (cardType !== 'visa' && cardType !== 'mastercard') {
+    logger.error(`Unaccepted credit card type: ${cardType}`);
+    return { error: 'UnacceptedCreditCard', message: `Credit card type ${cardType} is not accepted.` };
+  }
+  
+  // Validate that the expiration date is in the future
+  const currentMonthYear = currentYear * 12 + currentMonth;
+  const expirationMonthYear = year * 12 + month;
+  if (currentMonthYear > expirationMonthYear) {
+    logger.error(`Expired credit card: ${cardNumber.replace('-', '')}, Expiry: ${month}/${year}`);
+    return { error: 'ExpiredCreditCard', message: 'The credit card is expired.' };
+  }
+  
+  logger.info(`Transaction processed: ${cardType} ending in ${cardNumber.slice(-4)} | Amount: ${amount.currency_code}${amount.units}.${amount.nanos}`);
+  
+  return { transaction_id: uuidv4() }
 };
