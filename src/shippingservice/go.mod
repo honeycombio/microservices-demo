@@ -1,6 +1,6 @@
 module github.com/honeycombio/microservices-demo/src/shippingservice
 
-go 1.17
+go 1.20
 
 require (
 	github.com/sirupsen/logrus v1.4.2
