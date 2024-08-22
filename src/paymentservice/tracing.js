@@ -1,21 +1,21 @@
 "use strict";
 
 const process = require('process');
-const { NodeSDK } = require('@opentelemetry/sdk-node');
+const opentelemetry = require('@opentelemetry/sdk-node');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { Resource } = require('@opentelemetry/resources');
-const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
-const { CollectorTraceExporter } = require("@opentelemetry/exporter-collector-grpc");
+const { SEMRESATTRS_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
+const { OTLPTraceExporter } =  require('@opentelemetry/exporter-trace-otlp-grpc');
 
 // Create an OpenTelemetry Collector exporter for traces
-const traceExporter = new CollectorTraceExporter({
+const traceExporter = new OTLPTraceExporter({
   url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT
 });
 
 // create the OpenTelemetry NodeSDK trace provider
-const sdk = new NodeSDK({
+const sdk = new opentelemetry.NodeSDK({
   resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: process.env.SERVICE_NAME,
+    [SEMRESATTRS_SERVICE_NAME]: process.env.SERVICE_NAME || 'paymentservice',
     [ 'ip' ]: process.env.POD_IP,
   }),
   traceExporter,
@@ -23,9 +23,12 @@ const sdk = new NodeSDK({
 });
 
 // Start the OpenTelemetry tracing SDK
-sdk.start()
-    .then(() => console.log('Tracing initialized'))
-    .catch((error) => console.log('Error initializing tracing', error));
+try {
+  sdk.start();
+  console.log('Tracing initialized');
+} catch (error) {
+  console.log('Error initializing tracing', error);
+}
 
 // On shutdown, ensure we flush all telemetry first
 process.on('SIGTERM', () => {
