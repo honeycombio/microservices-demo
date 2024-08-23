@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go.opentelemetry.io/otel/trace"
 	"html/template"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
@@ -172,7 +173,7 @@ func (fe *frontendServer) addToCartHandler(w http.ResponseWriter, r *http.Reques
 	quantity, _ := strconv.ParseUint(r.FormValue("quantity"), 10, 32)
 
 	productID := r.FormValue("product_id")
-	if productID == "" || quantity == 0 || quantity > 10 {
+	if productID == "" || quantity == 0 || quantity > math.MaxInt32 {
 		renderHTTPError(log, r, w, errors.New("invalid form input"), http.StatusBadRequest)
 		return
 	}
