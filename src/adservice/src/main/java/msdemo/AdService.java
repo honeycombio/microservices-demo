@@ -74,7 +74,7 @@ public final class AdService {
         float num = 0;
         float val = max / (float) buckets;
         for (int i = 0; i < buckets; i++) {
-            num += Math.random() * val;
+            num += (int) (Math.random() * val);
         }
         return num;
     }
