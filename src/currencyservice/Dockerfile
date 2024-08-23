@@ -1,18 +1,17 @@
-FROM node:22-bullseye as base
+FROM node:20-alpine as base
 
 FROM base as builder
 
-RUN apt-get update && apt-get install -y \
+RUN apk add --update --no-cache \
     python3 \
-    g++ \
-    make
+    make \
+    g++ 
 
 WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-# RUN npm config set registry https://registry.npmjs.org/
-RUN npm ci
+RUN npm install --only=production
 
 FROM base
 
