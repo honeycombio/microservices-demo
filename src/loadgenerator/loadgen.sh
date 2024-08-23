@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set -e
 trap "exit" TERM
 
 if [[ -z "${FRONTEND_ADDR}" ]]; then
@@ -8,14 +7,12 @@ if [[ -z "${FRONTEND_ADDR}" ]]; then
     exit 1
 fi
 
-set -x
+# set -x
 
-# Keep trying until the frontend is reachable
+# if one request to the frontend fails, then exit
 while true; do
     STATUSCODE=$(curl --silent --output /dev/stderr --write-out "%{http_code}" "${FRONTEND_ADDR}")
-    if test $STATUSCODE -eq 200; then
-        break
-    else
+    if test $STATUSCODE -ne 200; then
         echo "Error: Could not reach frontend - Status code: ${STATUSCODE}"
         sleep 1
     fi
