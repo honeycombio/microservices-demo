@@ -1,11 +1,12 @@
 "use strict";
 
 const process = require('process');
-const opentelemetry = require('@opentelemetry/sdk-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-grpc');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { Resource } = require('@opentelemetry/resources');
 const { SEMRESATTRS_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
-const { OTLPTraceExporter } =  require('@opentelemetry/exporter-trace-otlp-grpc');
+
 
 // Create an OpenTelemetry Collector exporter for traces
 const traceExporter = new OTLPTraceExporter({
@@ -13,13 +14,19 @@ const traceExporter = new OTLPTraceExporter({
 });
 
 // create the OpenTelemetry NodeSDK trace provider
-const sdk = new opentelemetry.NodeSDK({
+const sdk = new NodeSDK({
   resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: process.env.SERVICE_NAME || 'paymentservice',
+    [SEMRESATTRS_SERVICE_NAME]: process.env.SERVICE_NAME || 'payment',
     [ 'ip' ]: process.env.POD_IP,
   }),
   traceExporter,
-  instrumentations: [getNodeAutoInstrumentations()] // enable all Auto Instrumentations
+  instrumentations: [getNodeAutoInstrumentations(
+    {
+      '@opentelemetry/instrumentation-fs': {
+        enabled: false, // disable fs events
+      }
+    }
+  )]
 });
 
 // Start the OpenTelemetry tracing SDK

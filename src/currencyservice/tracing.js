@@ -2,10 +2,10 @@
 
 const process = require('process');
 const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-grpc');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { Resource } = require('@opentelemetry/resources');
-const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
-const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
+const { SEMRESATTRS_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
 
 
 // Create an OpenTelemetry Collector exporter for traces
@@ -16,7 +16,7 @@ const traceExporter = new OTLPTraceExporter({
 // create the OpenTelemetry NodeSDK trace provider
 const sdk = new NodeSDK({
   resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: process.env.SERVICE_NAME,
+    [SEMRESATTRS_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME,
     [ 'ip' ]: process.env.POD_IP,
   }),
   traceExporter,
