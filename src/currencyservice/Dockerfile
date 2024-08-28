@@ -1,23 +1,19 @@
-FROM node:20-alpine as base
+FROM node:22.6-alpine AS base
 
-FROM base as builder
+FROM base AS builder
 
-RUN apk add --update --no-cache \
+RUN apk add --no-cache \
     python3 \
-    make \
-    g++ 
+    g++ \
+    make
 
 WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-RUN npm install --only=production
+RUN npm install --omit=dev
 
 FROM base
-
-RUN GRPC_HEALTH_PROBE_VERSION=v0.3.6 && \
-    wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
-    chmod +x /bin/grpc_health_probe
 
 WORKDIR /usr/src/app
 
