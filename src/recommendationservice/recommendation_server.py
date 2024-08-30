@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import os
 import random
 import time
@@ -6,10 +5,7 @@ from concurrent import futures
 
 import grpc
 
-from random import (
-    random,
-    sample,
-)
+from random import sample  # Keep this import for the sample function
 from time import sleep
 
 import demo_pb2
@@ -34,60 +30,78 @@ worker_pool = futures.ThreadPoolExecutor(max_workers=10)
 
 tracer = trace.get_tracer(__name__)
 
-
 def get_random_wait_time(max_time, buckets):
     num = 0
     val = max_time / buckets
     for i in range(buckets):
-        num += random() * val
+        num += random.random() * val
 
     return num
-
 
 def sleep_random(max_time):
     rnd = get_random_wait_time(max_time, 4)
     time.sleep(rnd / 1000)
 
-
 def mock_database_call(max_time, name, query):
     with tracer.start_as_current_span(name) as span:
-        # span = trace.get_current_span()
         span.set_attribute("db.statement", query)
         span.set_attribute("db.name", "recommendation")
         sleep_random(max_time)
 
+        # Simulate occasional database errors
+        if random.random() < 0.05:  # 5% chance of error
+            logger.error(f"Database error occurred during {name}: Connection timeout")
+            raise Exception("Database connection timeout")
 
 class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
     def ListRecommendations(self, request, context):
         with tracer.start_as_current_span("ListRecommendationsFunction"):
-            mock_database_call(250,
-                               "SELECT recommendation.products",
-                               "SELECT * FROM products WHERE category IN (?)")
+            try:
+                mock_database_call(250,
+                                   "SELECT recommendation.products",
+                                   "SELECT * FROM products WHERE category IN (?)")
 
-            span = trace.get_current_span()
-            span.set_attribute("app.python.active_threads", len(worker_pool._threads))
-            span.set_attribute("app.python.pending_pool", worker_pool._work_queue.qsize())
-            max_responses = 5
+                span = trace.get_current_span()
+                span.set_attribute("app.python.active_threads", len(worker_pool._threads))
+                span.set_attribute("app.python.pending_pool", worker_pool._work_queue.qsize())
+                max_responses = 5
 
-            # fetch list of products from product catalog stub
-            cat_response = product_catalog_stub.ListProducts(demo_pb2.Empty())
-            product_ids = [x.id for x in cat_response.products]
-            filtered_products = list(set(product_ids) - set(request.product_ids))
-            num_products = len(filtered_products)
-            num_return = min(max_responses, num_products)
+                # Simulate occasional warnings
+                if random.random() < 0.1:  # 10% chance of warning
+                    logger.warning("High number of active threads detected")
 
-            # sample list of indicies to return
-            indices = sample(range(num_products), num_return)
+                # fetch list of products from product catalog stub
+                cat_response = product_catalog_stub.ListProducts(demo_pb2.Empty())
+                product_ids = [x.id for x in cat_response.products]
+                filtered_products = list(set(product_ids) - set(request.product_ids))
+                num_products = len(filtered_products)
+                num_return = min(max_responses, num_products)
 
-            # fetch product ids from indices
-            prod_list = [filtered_products[i] for i in indices]
-            logger.info("[Recv ListRecommendations] product_ids={}".format(prod_list))
+                # Simulate occasional errors
+                if random.random() < 0.05:  # 5% chance of error
+                    logger.error("Failed to fetch product list: Product catalog service unavailable")
+                    context.set_code(grpc.StatusCode.UNAVAILABLE)
+                    context.set_details("Product catalog service is currently unavailable")
+                    return demo_pb2.ListRecommendationsResponse()
 
-            # build and return response
-            response = demo_pb2.ListRecommendationsResponse()
-            response.product_ids.extend(prod_list)
+                # sample list of indices to return
+                indices = sample(range(num_products), num_return)
 
-            return response
+                # fetch product ids from indices
+                prod_list = [filtered_products[i] for i in indices]
+                logger.info("[Recv ListRecommendations] product_ids={}".format(prod_list))
+
+                # build and return response
+                response = demo_pb2.ListRecommendationsResponse()
+                response.product_ids.extend(prod_list)
+
+                return response
+
+            except Exception as e:
+                logger.error(f"Unexpected error in ListRecommendations: {str(e)}")
+                context.set_code(grpc.StatusCode.INTERNAL)
+                context.set_details("An unexpected error occurred")
+                return demo_pb2.ListRecommendationsResponse()
 
     def Check(self, request, context):
         return health_pb2.HealthCheckResponse(
@@ -96,7 +110,6 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
     def Watch(self, request, context):
         return health_pb2.HealthCheckResponse(
             status=health_pb2.HealthCheckResponse.UNIMPLEMENTED)
-
 
 if __name__ == "__main__":
     logger.info("initializing recommendationservice")
