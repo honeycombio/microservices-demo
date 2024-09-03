@@ -2,7 +2,6 @@ module github.com/honeycombio/microservices-demo/src/productcatalogservice
 
 go 1.21
 
-toolchain go1.22.5
 
 require (
 	github.com/golang/protobuf v1.5.4
