@@ -26,12 +26,12 @@ spec:
           value: grpc
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: http://opentelemetry-collector:4317
-        - name: OTEL_RESOURCE_ATTRIBUTES
-          value: ip=$(POD_IP)
         - name: POD_IP
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: ip=$(POD_IP)
         - name: OTEL_SERVICE_NAME
           value: currency
         # readinessProbe:
