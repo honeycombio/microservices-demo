@@ -15,6 +15,8 @@ while true; do
     if test $STATUSCODE -ne 200; then
         echo "Error: Could not reach frontend - Status code: ${STATUSCODE}"
         sleep 1
+    else
+        break
     fi
 done
 
