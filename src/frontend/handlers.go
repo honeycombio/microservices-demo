@@ -184,7 +184,7 @@ func (fe *frontendServer) addToCartHandler(w http.ResponseWriter, r *http.Reques
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve product"), http.StatusInternalServerError)
 		return
 	}
-	
+
 	if err := fe.insertCart(r.Context(), sessionID(r), p.GetId(), int32(quantity)); err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to add to cart"), http.StatusInternalServerError)
 		return
@@ -314,7 +314,7 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	// Get current span and set additional attributes to it
 	span := trace.SpanFromContext(ctx)
 
-	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
+	order, err := fe.checkoutSvcClient.
 		PlaceOrder(ctx, &pb.PlaceOrderRequest{
 			Email: email,
 			CreditCard: &pb.CreditCardInfo{

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/gorilla/mux"
+	pb "github.com/honeycombio/microservices-demo/src/frontend/demo/msdemo"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	middleware "go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
@@ -19,6 +20,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -48,27 +50,27 @@ var (
 type ctxKeySessionID struct{}
 
 type frontendServer struct {
-	productCatalogSvcAddr string
-	productCatalogSvcConn *grpc.ClientConn
+	adSvcAddr   string
+	adSvcClient pb.AdServiceClient
 
-	currencySvcAddr string
-	currencySvcConn *grpc.ClientConn
+	checkoutSvcAddr   string
+	checkoutSvcClient pb.CheckoutServiceClient
+	getCacheClient    pb.CheckoutServiceClient
 
-	cartSvcAddr string
-	cartSvcConn *grpc.ClientConn
+	cartSvcAddr   string
+	cartSvcClient pb.CartServiceClient
 
-	recommendationSvcAddr string
-	recommendationSvcConn *grpc.ClientConn
+	currencySvcAddr   string
+	currencySvcClient pb.CurrencyServiceClient
 
-	checkoutSvcAddr string
-	checkoutSvcConn *grpc.ClientConn
-	getCacheConn    *grpc.ClientConn
+	productCatalogSvcAddr   string
+	productCatalogSvcClient pb.ProductCatalogServiceClient
 
-	shippingSvcAddr string
-	shippingSvcConn *grpc.ClientConn
+	recommendationSvcAddr   string
+	recommendationSvcClient pb.RecommendationServiceClient
 
-	adSvcAddr string
-	adSvcConn *grpc.ClientConn
+	shippingSvcAddr   string
+	shippingSvcClient pb.ShippingServiceClient
 }
 
 var CacheTrack *CacheTracker
@@ -122,28 +124,49 @@ func main() {
 	MockBuildId = randomHex(4)
 
 	svc := new(frontendServer)
-	mustMapEnv(&svc.productCatalogSvcAddr, "PRODUCT_CATALOG_SERVICE_ADDR")
-	mustMapEnv(&svc.currencySvcAddr, "CURRENCY_SERVICE_ADDR")
-	mustMapEnv(&svc.cartSvcAddr, "CART_SERVICE_ADDR")
-	mustMapEnv(&svc.recommendationSvcAddr, "RECOMMENDATION_SERVICE_ADDR")
-	mustMapEnv(&svc.checkoutSvcAddr, "CHECKOUT_SERVICE_ADDR")
-	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_SERVICE_ADDR")
 	mustMapEnv(&svc.adSvcAddr, "AD_SERVICE_ADDR")
+	c := mustCreateClientConn(svc.adSvcAddr)
+	svc.adSvcClient = pb.NewAdServiceClient(c)
+	defer c.Close()
 
-	mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr)
-	mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr)
-	mustConnGRPC(ctx, &svc.cartSvcConn, svc.cartSvcAddr)
-	mustConnGRPC(ctx, &svc.recommendationSvcConn, svc.recommendationSvcAddr)
-	mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr)
-	mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr)
-	mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr)
+	mustMapEnv(&svc.cartSvcAddr, "CART_SERVICE_ADDR")
+	c = mustCreateClientConn(svc.cartSvcAddr)
+	svc.cartSvcClient = pb.NewCartServiceClient(c)
+	defer c.Close()
+
+	mustMapEnv(&svc.checkoutSvcAddr, "CHECKOUT_SERVICE_ADDR")
+	c = mustCreateClientConn(svc.checkoutSvcAddr)
+	svc.checkoutSvcClient = pb.NewCheckoutServiceClient(c)
+	defer c.Close()
+
+	mustMapEnv(&svc.currencySvcAddr, "CURRENCY_SERVICE_ADDR")
+	c = mustCreateClientConn(svc.currencySvcAddr)
+	svc.currencySvcClient = pb.NewCurrencyServiceClient(c)
+	defer c.Close()
+
+	mustMapEnv(&svc.productCatalogSvcAddr, "PRODUCT_CATALOG_SERVICE_ADDR")
+	c = mustCreateClientConn(svc.productCatalogSvcAddr)
+	svc.productCatalogSvcClient = pb.NewProductCatalogServiceClient(c)
+	defer c.Close()
+
+	mustMapEnv(&svc.recommendationSvcAddr, "RECOMMENDATION_SERVICE_ADDR")
+	c = mustCreateClientConn(svc.recommendationSvcAddr)
+	svc.recommendationSvcClient = pb.NewRecommendationServiceClient(c)
+	defer c.Close()
+
+	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_SERVICE_ADDR")
+	c = mustCreateClientConn(svc.shippingSvcAddr)
+	svc.shippingSvcClient = pb.NewShippingServiceClient(c)
+	defer c.Close()
+
 	// getCache connection is not instrumented
-	svc.getCacheConn, err = grpc.DialContext(ctx, svc.checkoutSvcAddr,
+	conn, err := grpc.DialContext(ctx, svc.checkoutSvcAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		panic(errors.Wrapf(err, "grpc: failed to create getCache connection to checkout service %s", svc.checkoutSvcAddr))
 	}
+	svc.getCacheClient = pb.NewCheckoutServiceClient(conn)
 
 	r := mux.NewRouter()
 
@@ -220,17 +243,16 @@ func mustMapEnv(target *string, envKey string) {
 	*target = v
 }
 
-func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string) {
-	// add OpenTelemetry instrumentation to outgoing gRPC requests
-	var err error
-	*conn, err = grpc.DialContext(ctx, addr,
+func mustCreateClientConn(svcAddr string) *grpc.ClientConn {
+	c, err := grpc.NewClient(svcAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
-		panic(errors.Wrapf(err, "grpc: failed to connect %s", addr))
+		log.Fatalf("could not connect to %s service, err: %+v", svcAddr, err)
 	}
+
+	return c
 }
 
 func randomHex(n int) string {
