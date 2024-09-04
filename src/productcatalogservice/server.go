@@ -143,8 +143,7 @@ func run(port string) string {
 
 	// create gRPC server with OpenTelemetry instrumentation on all incoming requests
 	srv := grpc.NewServer(
-		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor(otelgrpc.WithTracerProvider(otel.GetTracerProvider()))),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 
 	svc := &productCatalog{}
