@@ -393,7 +393,7 @@ func mockDatabaseCall(ctx context.Context, maxTime int, name, query string) {
 }
 
 func loadDiscountFromDatabase(ctx context.Context, cachesize int) string {
-	numCalls := math.Max(1, math.Pow(float64(cachesize)/6000, 4)/350)
+	numCalls := math.Max(1, math.Pow(float64(cachesize)/6000, 4)/3000)
 	for i := float64(0); i < numCalls; i++ {
 		mockDatabaseCall(ctx, 250, "SELECT checkout.discounts", "SELECT * FROM discounts WHERE user = ?")
 	}
