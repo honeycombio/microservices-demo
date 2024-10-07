@@ -3,6 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
+	"math/rand"
+	"net"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/google/uuid"
 	pb "github.com/honeycombio/microservices-demo/src/checkoutservice/demo/msdemo"
 	"github.com/honeycombio/microservices-demo/src/checkoutservice/money"
@@ -23,12 +30,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
-	"math"
-	"math/rand"
-	"net"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
@@ -309,10 +310,12 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "shipping error: %+v", err)
 	}
+
 	span.AddEvent("shipped", trace.WithAttributes(
 		orderIDKey.String(orderID.String()),
 		userIDKey.String(userID),
 		attribute.Int("itemCount", len(prep.cartItems)),
+		attribute.String("orderItems", fmt.Sprintf("%+v", prep.orderItems)),
 	))
 
 	orderResult := &pb.OrderResult{
