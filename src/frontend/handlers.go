@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/otel/trace"
 	"html/template"
 	"math"
 	"math/rand"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/gorilla/mux"
 	pb "github.com/honeycombio/microservices-demo/src/frontend/demo/msdemo"
 	"github.com/honeycombio/microservices-demo/src/frontend/money"
@@ -20,6 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type platformDetails struct {
@@ -108,10 +110,22 @@ func (plat *platformDetails) setPlatformDetails(env string) {
 }
 
 func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	span := trace.SpanFromContext(ctx)
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	id := mux.Vars(r)["id"]
+
+	//randomly panic for demo scenario
+	if rand.Intn(100) == 0 {
+		err := fmt.Errorf("Product service failed to respond. Connection timeout after 3 retries.")
+		span.SetStatus(codes.Error, "panic incoming")
+		span.RecordError(err)
+		renderHTTPError(log, r, w, errors.New("Product service failed to respond"), http.StatusInternalServerError)
+		return
+
+	}
 	if id == "" {
-		renderHTTPError(log, r, w, errors.New("product id not specified"), http.StatusBadRequest)
+		renderHTTPError(log, r, w, errors.New("Product id not specified"), http.StatusBadRequest)
 		return
 	}
 	log.WithField("id", id).WithField("currency", currentCurrency(r)).
