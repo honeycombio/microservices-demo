@@ -22,7 +22,42 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/log/global"
 )
+
+type OtelHook struct{}
+
+func (h *OtelHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+func (h *OtelHook) Fire(entry *logrus.Entry) error {
+	logger := global.Logger("logrus-otel")
+	attrs := []log.KeyValue{}
+	if entry.Data["trace_id"] != nil && entry.Data["span_id"] != nil {
+		attrs = []log.KeyValue{
+			log.String("trace.trace_id", entry.Data["trace_id"].(string)),
+			log.String("trace.parent_id", entry.Data["span_id"].(string)),
+			log.String("meta.annotation_type", "span_event"),
+		}
+	}
+	if entry.Data["error"] != nil {
+		attrs = append(attrs, log.String("error.message", fmt.Sprintf("%+v", entry.Data["error"])))
+	}
+	var record log.Record
+	record.AddAttributes(attrs...)
+	record.SetBody(log.StringValue(entry.Message))
+	if entry.Data["error"] != nil {
+		record.SetSeverity(log.SeverityError)
+	} else {
+		record.SetSeverity(log.Severity(entry.Level))
+	}
+	record.SetTimestamp(entry.Time)
+	logger.Emit(context.Background(), record)
+	// fmt.Println("** OTELHOOK triggered for log level:", entry.Level)
+	return nil
+}
 
 type platformDetails struct {
 	css      string
@@ -423,15 +458,25 @@ func (fe *frontendServer) setCurrencyHandler(w http.ResponseWriter, r *http.Requ
 // available. It ignores the error retrieving the ad since it is not critical.
 func (fe *frontendServer) chooseAd(ctx context.Context, ctxKeys []string, log logrus.FieldLogger) *pb.Ad {
 	ads, err := fe.getAd(ctx, ctxKeys)
+	span := trace.SpanFromContext(ctx)
 	if err != nil {
-		log.WithField("error", err).Warn("failed to retrieve ads")
+		log.WithFields(map[string]interface{}{
+			"error":    err,
+			"trace_id": span.SpanContext().TraceID().String(),
+			"span_id":  span.SpanContext().SpanID().String(),
+		}).Warn("failed to retrieve ads")
 		return nil
 	}
 	return ads[rand.Intn(len(ads))]
 }
 
 func renderHTTPError(log logrus.FieldLogger, r *http.Request, w http.ResponseWriter, err error, code int) {
-	log.WithField("error", err).Error("request error")
+	span := trace.SpanFromContext(r.Context())
+	log.WithFields(map[string]interface{}{
+		"error":    err,
+		"trace_id": span.SpanContext().TraceID().String(),
+		"span_id":  span.SpanContext().SpanID().String(),
+	}).Error("HTTP request error")
 	errMsg := fmt.Sprintf("%+v", err)
 
 	w.WriteHeader(code)
@@ -441,8 +486,11 @@ func renderHTTPError(log logrus.FieldLogger, r *http.Request, w http.ResponseWri
 		"error":       errMsg,
 		"status_code": code,
 		"status":      http.StatusText(code),
+		"trace_id":    span.SpanContext().TraceID().String(),
+		"span_id":     span.SpanContext().SpanID().String(),
 	}); templateErr != nil {
 		log.Println(templateErr)
+		// also write the error as an OTEL log
 	}
 }
 

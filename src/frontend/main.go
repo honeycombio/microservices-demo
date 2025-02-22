@@ -5,6 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/gorilla/mux"
 	pb "github.com/honeycombio/microservices-demo/src/frontend/demo/msdemo"
 	"github.com/pkg/errors"
@@ -12,19 +18,17 @@ import (
 	middleware "go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"log"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
@@ -81,6 +85,11 @@ var MockBuildId = ""
 
 func main() {
 
+	ctx := context.Background()
+	// initialize otel logging first
+	lp := initOtelLogging(context.Background())
+	defer func() { _ = lp.Shutdown(ctx) }()
+
 	log := logrus.New()
 	log.Level = logrus.DebugLevel
 	log.Formatter = &logrus.JSONFormatter{
@@ -92,8 +101,7 @@ func main() {
 		TimestampFormat: time.RFC3339Nano,
 	}
 	log.Out = os.Stdout
-
-	ctx := context.Background()
+	log.AddHook(&OtelHook{})
 
 	// Initialize OpenTelemetry Tracing
 	tp := initOtelTracing(ctx, log)
@@ -194,6 +202,32 @@ func main() {
 
 	log.Infof("starting server on " + addr + ":" + srvPort)
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
+}
+
+func initOtelLogging(ctx context.Context) *sdklog.LoggerProvider {
+	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if endpoint == "" {
+		endpoint = "opentelemetry-collector:4317"
+	}
+	logExporter, err := otlploggrpc.New(
+		ctx,
+		otlploggrpc.WithEndpoint(endpoint),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String("frontend"),
+	)
+	provider := sdklog.NewLoggerProvider(
+		sdklog.WithProcessor(
+			sdklog.NewBatchProcessor(logExporter),
+		),
+		sdklog.WithResource(res),
+	)
+	global.SetLoggerProvider(provider)
+	return provider
 }
 
 func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.TracerProvider {
