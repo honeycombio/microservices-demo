@@ -1,0 +1,53 @@
+name: Build images and push to Amazon ECR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/frontend/**"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-push-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            src:
+              - 'src/frontend/**'
+
+      - name: Check for files changed in frontend
+        if: steps.changes.outputs.src == 'true'
+        run: echo "Files changed in frontend"
+
+      - name: Configure AWS credentials
+        if: steps.changes.outputs.src == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GHA_OIDC_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: steps.changes.outputs.src == 'true'
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push docker image to Amazon ECR
+        if: steps.changes.outputs.src == 'true'
+        working-directory: ./src/frontend
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: microservices-demo/frontend
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
