@@ -1,4 +1,4 @@
-name: cartservice - Build images and push to AWS ECR
+name: cart - Build images and push to AWS ECR
 
 on:
   push:
