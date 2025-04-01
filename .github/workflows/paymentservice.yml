@@ -1,4 +1,4 @@
-name: paymentservice - Build images and push to AWS ECR
+name: payment - Build images and push to AWS ECR
 
 on:
   push:
