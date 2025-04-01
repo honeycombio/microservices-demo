@@ -4,16 +4,19 @@
   "description": "Run the following command to restore dependencies to `vendor/` directory:",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@opentelemetry/api": "^1.0.3",
-    "@opentelemetry/auto-instrumentations-web": "^0.25.0",
-    "@opentelemetry/instrumentation-user-interaction": "^0.25.0",
-    "@opentelemetry/resources": "^1.0.0",
-    "@opentelemetry/semantic-conventions": "^1.0.0",
+    "@honeycombio/opentelemetry-web": "^0.15.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-web": "^0.45.1",
     "zone.js": "^0.11.4"
+  },
+  "devDependencies": {
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1"
   }
 }
