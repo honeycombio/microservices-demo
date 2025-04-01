@@ -1,4 +1,4 @@
-name: currencyservice - Build images and push to AWS ECR
+name: currency - Build images and push to AWS ECR
 
 on:
   push:
