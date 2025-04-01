@@ -16,6 +16,10 @@
     <link rel="stylesheet" type="text/css" href="/static/styles/cart.css">
     <link rel="stylesheet" type="text/css" href="/static/styles/order.css">
     <link rel='shortcut icon' type='image/x-icon' href='/static/favicon.ico' />
+    <meta
+      name="traceparent"
+      content="00-{{ $.trace_id }}-{{ $.span_id }}-01"
+    />
 </head>
 
 <body>

@@ -101,8 +101,8 @@ The `placeOrderHandler` in the `handlers.go` file will add the userid and reques
 The userid and requestid will be available to all downstream spans.
 ```go
 	// add the UserID and requestId into OpenTelemetry Baggage to propagate across services
-	userIdMember, _ := baggage.NewMember("userid", s)
-	requestIdMember, _ := baggage.NewMember("requestID", reqID)
+	userIdMember, _ := baggage.NewMember("app.user_id", s)
+	requestIdMember, _ := baggage.NewMember("app.request_id", reqID)
 	bags := baggage.FromContext(ctx)
 	bags, _ = bags.SetMember(userIdMember)
 	bags, _ = bags.SetMember(requestIdMember)
@@ -111,6 +111,13 @@ The userid and requestid will be available to all downstream spans.
 
 Baggage is propagated to downstream services, but by default it is not exported to your telemetry backend.
 A Span Processor that explicitly exports Baggage is required to export this data to a telemetry backend like Honeycomb.
+
+### Browser Javascript
+In order to build browser javascript for otel web sdk, run the following command:
+```
+npm run build
+```
+This will rebuild the `instrumentation-load.js` at ./dist directory.
 
 ## Demo Story code
 

@@ -89,7 +89,7 @@ Reading userid and requestid from Baggage
 Setting orderid into Baggage
 ```go
 	// Add orderid to Tracing Baggage
-	orderIDMember, _ := baggage.NewMember("orderid", orderID.String())
+	orderIDMember, _ := baggage.NewMember("app.order_id", orderID.String())
 	bags, _ = bags.SetMember(orderIDMember)
 	ctx = baggage.ContextWithBaggage(ctx, bags)
 ```
