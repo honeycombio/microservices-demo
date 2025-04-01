@@ -1,4 +1,4 @@
-name: emailservice - Build images and push to AWS ECR
+name: email - Build images and push to AWS ECR
 
 on:
   push:
