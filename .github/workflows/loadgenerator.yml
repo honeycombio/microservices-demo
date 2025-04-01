@@ -1,4 +1,4 @@
-name: Build images and push to Amazon ECR
+name: loadgenerator - Build images and push to AWS ECR
 
 on:
   push:
