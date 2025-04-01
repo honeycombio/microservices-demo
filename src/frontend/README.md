@@ -112,12 +112,14 @@ The userid and requestid will be available to all downstream spans.
 Baggage is propagated to downstream services, but by default it is not exported to your telemetry backend.
 A Span Processor that explicitly exports Baggage is required to export this data to a telemetry backend like Honeycomb.
 
-### Browser Javascript
+### Browser Javascript (Web SDK)
+Web page in the browser also emits web traces such as document loads, page loads, resource loads, etc.
+
 In order to build browser javascript for otel web sdk, run the following command:
 ```
 npm run build
 ```
-This will rebuild the `instrumentation-load.js` at ./dist directory.
+This will rebuild the `instrumentation-load.js` at ./dist directory, which will then be picked up by the HTML pages.
 
 ## Demo Story code
 
