@@ -212,6 +212,7 @@ func initOtelLogging(ctx context.Context) *sdklog.LoggerProvider {
 	logExporter, err := otlploggrpc.New(
 		ctx,
 		otlploggrpc.WithEndpoint(endpoint),
+		otlploggrpc.WithInsecure(),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -241,6 +242,7 @@ func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.Trac
 	//   otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, ""))
 	opts := []otlptracegrpc.Option{
 		otlptracegrpc.WithEndpoint(endpoint),
+		otlptracegrpc.WithInsecure(),
 	}
 
 	// Create the exporter

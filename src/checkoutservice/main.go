@@ -128,6 +128,7 @@ func initOtelLogging(ctx context.Context) *sdklog.LoggerProvider {
 	logExporter, err := otlploggrpc.New(
 		ctx,
 		otlploggrpc.WithEndpoint(endpoint),
+		otlploggrpc.WithInsecure(),
 	)
 	if err != nil {
 		log.Fatal(err)
