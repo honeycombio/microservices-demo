@@ -74,6 +74,7 @@ func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.Trac
 ```
 
 The [logrus](https://github.com/sirupsen/logrus) package is added with OtelHook which generates Otel Logs.
+
 ```go
 // OtelHook is a logrus hook that sends logs to OpenTelemetry
 type OtelHook struct{}
@@ -128,8 +129,10 @@ func init() {
 You should call `TraceProvider.shutdown()` when your service is shutdown to ensure all spans are exported.
 This service makes that call as part of a deferred function in `main`
 ```
-	// Initialize OpenTelemetry Tracing
+	// Initialize OpenTelemetry Log and Tracing
 	ctx := context.Background()
+	lp := initOtelLogging(ctx)
+	defer func() { _ = lp.Shutdown(ctx) }()
 	tp := initOtelTracing(ctx, log)
 	defer func() { _ = tp.Shutdown(ctx) }()
 ```
