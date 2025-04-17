@@ -186,7 +186,7 @@ func initOtelTracing(ctx context.Context, log logrus.FieldLogger) *sdktrace.Trac
 }
 
 func main() {
-	// Initialize OpenTelemetry Tracing
+	// Initialize OpenTelemetry Log and Tracing
 	ctx := context.Background()
 	lp := initOtelLogging(ctx)
 	defer func() { _ = lp.Shutdown(ctx) }()
