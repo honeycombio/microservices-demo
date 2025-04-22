@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -77,12 +78,12 @@ func (c *CacheTracker) updateSize(newSize int) {
 
 func (c *CacheTracker) createMarker() {
 
-	c.createMarkerHoneycomb()
 	MockBuildId = randomHex(4) // update build id
+	c.createMarkerHoneycomb(MockBuildId)
 
 }
 
-func (c *CacheTracker) createMarkerHoneycomb() {
+func (c *CacheTracker) createMarkerHoneycomb(buildId string) {
 	if c.honeycombAPIKey == "" {
 		// Do nothing
 		return
@@ -90,7 +91,7 @@ func (c *CacheTracker) createMarkerHoneycomb() {
 	c.log.Debug("Creating Honeycomb marker...")
 
 	url := "https://api.honeycomb.io/1/markers/__all__"
-	payload := []byte(`{"message":"Deploy 5645075", "url":"https://github.com/honeycombio/microservices-demo/commit/5645075", "type":"deploy"}`)
+	payload := []byte(fmt.Sprintf(`{"message":"Deploy %s", "url":"https://github.com/honeycombio/microservices-demo/commit/5645075", "type":"deploy"}`, buildId))
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
 	if err != nil {
 		c.log.Error(errors.Wrap(err, "could not create request to generate marker"))

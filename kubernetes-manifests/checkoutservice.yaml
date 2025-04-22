@@ -47,14 +47,14 @@ spec:
           - name: OTEL_RESOURCE_ATTRIBUTES
             value: ip=$(POD_IP)
           - name: CACHE_USER_THRESHOLD
-            value: "35000"
+            value: "25000"
           resources:
             requests:
               cpu: 100m
-              memory: 40Mi
+              memory: 39Mi
             limits:
               cpu: 200m
-              memory: 40Mi
+              memory: 39Mi
 ---
 apiVersion: v1
 kind: Service
