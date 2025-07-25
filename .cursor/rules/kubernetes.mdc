@@ -1,0 +1,10 @@
+---
+description: When analyzing kubernetes via Honeycomb mcp
+alwaysApply: false
+---
+## Analyzing Kubernetes Platform
+- Who: SRE or developers who are dploying their application (ms-demo) to k8s environment
+- What: Check the status of kubernetes cluster which is running the application
+- Why: in order to find out if the performance or application related problems are originated from the kubernetes side.
+- How: There are two datasets : k8s-events and k8s-metrics which contains performance metrics for kubernetes. ms-demo applications do have resource attributes in their traces and logs that have k8s-* attributes that contains 1) cluster, 2) node, 3) pod of which they are deployed. Based on that information, query the k8s resources pertaining from it and check to see if there are any noticeable anomalies or incidents at the time of certain issues.
+- Goal: Checking if the platform is performing well or not during application incident is critical in resolving problems. Since ms-demo is deployed and running on kubernetes, it is important for SRE or developers to check how well the k8s platform is performing.
