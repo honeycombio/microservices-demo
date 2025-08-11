@@ -2,17 +2,20 @@
 description: Using Honeycomb via MCP to analyze ms-demo application
 alwaysApply: false
 ---
+
 ## Analyzing ms-demo Services in Honeycomb in general
+
 - Who: SRE or developers who wants to discover incidents and troubleshoot for performance and reliability
 - What: Discover generic problems based on how the service performs in request, errors, and duration
 - Why: Find potential problematic areas such as high errors, high requests, and potential bottlenecks (slowness)
-- How: Meausre number of requests, errors, and latencies in duration_ms of the services in ms-demo environment.
+- How: Measure number of requests, errors, and latencies in duration_ms of the services in ms-demo environment.
   - can span 8 hours in general for the time window.
   - services are defined as 'service.name'
   - span names are defined as 'name'
+  - users are defined as 'app.user_id'
   - requests are counts of the events
   - errors are denoted generally by 'error = true'
-    - errors can further be categorized by exception type, name, and descriptions
+  - errors can further be categorized by exception type, name, and descriptions
   - latencies are defined generally as 'duration_ms'
   - as for events that are based on http requests, http.url, http.status_code/status, and response times, and request/response bytes can be used to understand further.
 - Goal: discover any abnormal trends over period of time, and notify users of any 'interesting' or 'significant' devication of what could be considered as normal and healthy performance. Also suggest recommendations for improving the anomaly. Focus on their service name and the service's entry point so that user understands which service and which entrypoint has the issue.
