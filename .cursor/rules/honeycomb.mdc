@@ -19,3 +19,12 @@ alwaysApply: false
   - latencies are defined generally as 'duration_ms'
   - as for events that are based on http requests, http.url, http.status_code/status, and response times, and request/response bytes can be used to understand further.
 - Goal: discover any abnormal trends over period of time, and notify users of any 'interesting' or 'significant' devication of what could be considered as normal and healthy performance. Also suggest recommendations for improving the anomaly. Focus on their service name and the service's entry point so that user understands which service and which entrypoint has the issue.
+
+## Analyze RUM (Real User Monitoring) on Honeycomb Frontend Observability
+- RUM telemetries are located under 'browser' dataset
+- Telemetries consisted of:
+ - web vitals such as LCP, CLS, and INP and their scores
+ - document loads on http url
+ - resource content loads for the document and their URLs
+- session.id is important to understand in getting all the events pertaining to a particular user session.
+- errors are consisted of HTTP status codes (2xx, 3xx, 4xx, and 5xx) as well as error = true for any traces, and any presence of exception.message
