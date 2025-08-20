@@ -20,6 +20,17 @@ alwaysApply: false
   - as for events that are based on http requests, http.url, http.status_code/status, and response times, and request/response bytes can be used to understand further.
 - Goal: discover any abnormal trends over period of time, and notify users of any 'interesting' or 'significant' devication of what could be considered as normal and healthy performance. Also suggest recommendations for improving the anomaly. Focus on their service name and the service's entry point so that user understands which service and which entrypoint has the issue.
 
+## Analyzing Sample Rate and Whether it was sampled with Refinery
+- There is an attribute that shows how much an event is sampled, and its name is 'Sample Rate'. Sample rate is a positive number, and 1 means 1 out of 1 event, meaning 100% sampled, and 5 means 1 out of 5 events, meaning 20%.
+- When events are sampled through refinery, you will also see an attribute called 'meta.refinery.reason' which contains the name of the rule that refinery used to sample the data.
+- When events are sampled prior to arriving in refinery, refinery will record the original sample rate that was made previously. The attribute is called 'meta.original_sample_rate' and contains the sample rate.
+- meta.refinery_send_reason contains the refinery's send reason. The following are avaialbe:
+  - trace_send_got_root: The root span arrived, triggering the sampling decision.
+  - trace_send_expired: The TraceTimeout was reached before the root span arrived.
+  - trace_send_ejected_full: The trace cache was full, so the trace was ejected.
+  - trace_send_ejected_memsize: Refinery was out of memory, so the trace was ejected.
+  - trace_send_late_span: Refinery received span that arrived late, after processing and sending the trace.
+
 ## Analyze RUM (Real User Monitoring) on Honeycomb Frontend Observability
 - RUM telemetries are located under 'browser' dataset
 - Telemetries consisted of:
