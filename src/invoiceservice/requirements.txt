@@ -1,0 +1,5 @@
+# Base Airflow image already bundles most dependencies. These pins ensure the DAG
+# and telemetry integrations are available when running locally.
+apache-airflow[otel]==3.1.0
+opentelemetry-sdk>=1.27.0
+opentelemetry-exporter-otlp>=1.27.0
