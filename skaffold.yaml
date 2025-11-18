@@ -28,6 +28,8 @@ build:
       context: src/recommendationservice
     - image: shippingservice
       context: src/shippingservice
+    - image: invoiceservice
+      context: src/invoiceservice
   tagPolicy:
     gitCommit: {}
   local:

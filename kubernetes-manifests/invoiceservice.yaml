@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invoiceservice
+spec:
+  selector:
+    matchLabels:
+      app: invoiceservice
+  template:
+    metadata:
+      labels:
+        app: invoiceservice
+    spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: server
+        image: invoiceservice
+        ports:
+        - containerPort: 8080
+        env:
+        - name: AIRFLOW_UID
+          value: "50000"
+        - name: AIRFLOW_CONFIG
+          value: /opt/airflow/config/airflow.cfg
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: OTEL_SERVICE_NAME
+          value: invoice
+        resources:
+          requests:
+            cpu: 300m
+            memory: 1Gi
+          limits:
+            cpu: "1"
+            memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: invoiceservice
+spec:
+  type: ClusterIP
+  selector:
+    app: invoiceservice
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
