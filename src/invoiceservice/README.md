@@ -15,28 +15,26 @@ integration for tracing.
 - `otel-collector-config.yaml` – OpenTelemetry Collector config that batches spans and exports them to Honeycomb.
 - `airflow.cfg` – overrides enabling Airflow OpenTelemetry traces and metrics to point at the bundled collector.
 
-## Docker Compose Quickstart
+## Publish to Amazon ECR
 
-1. Export your host UID (needed so Airflow can write to mounted volumes) and start
-   the stack (Airflow + OpenTelemetry Collector):
+The GitHub Actions workflow in `.github/workflows/invoiceservice.yml` builds this image and pushes it to Amazon ECR
+whenever changes land on `main` under `src/invoiceservice/**`. It tags the image as both `latest` and the commit SHA and
+pushes to `${{ steps.login-ecr.outputs.registry }}/microservices-demo/invoiceservice`.
 
-   ```bash
-   export AIRFLOW_UID=$(id -u)
-   docker compose up
-   ```
 
-   The image installs dependencies from `requirements.txt` and launches
-   `airflow standalone`, which uses the built-in SQLite metadata database.
+## Run locally with Skaffold
 
-2. Open `http://localhost:8080/` and log in with the default standalone credentials
-   (`admin / admin`). Trigger `process_orders_dag` to process the bundled
-   `data/orders.json` file. Invoices will appear under `data/invoices`, and the
-   `airflow.cfg` overrides ensure both tracing and metrics are sent to the bundled
-   collector (`otel-collector`) listening on `http://otel-collector:4318`.
+You can use the root `skaffold.yaml` to build and deploy the invoiceservice (and the rest of Online Boutique) into your
+cluster:
 
-3. The collector batches spans and relays them to Honeycomb using the API key baked
-   into `otel-collector-config.yaml` (`x-honeycomb-team: 4A0OWtbdVS4ArSwzHQJEZA`). Update
-   this key if you need to target a different Honeycomb environment.
+```bash
+# Optional: override the destination registry for built images
+export SKAFFOLD_DEFAULT_REPO=<your-registry>
 
-To stop the demo, use `docker compose down`. Add `--volumes` if you also want to
-remove the ephemeral Airflow home volume.
+skaffold dev
+# or, for a one-off build/deploy
+skaffold run
+```
+
+Skaffold watches for changes under `src/invoiceservice` and rebuilds only the affected image. Ensure your cluster has the
+required secrets (e.g., Honeycomb API key) before running.
