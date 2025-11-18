@@ -6,9 +6,9 @@ USER root
 
 RUN groupadd --gid 6100 invoicesvc \
     && useradd --uid 6100 --gid 6100 \
-       --home /home/invoicesvc --create-home \
-       --shell /usr/sbin/nologin --password '*' \
-       --system invoicesvc
+    --home /home/invoicesvc --create-home \
+    --shell /usr/sbin/nologin --password '*' \
+    --system invoicesvc
 
 COPY requirements.txt /tmp/requirements.txt
 
@@ -32,9 +32,9 @@ USER root
 
 RUN groupadd --gid 6100 invoicesvc \
     && useradd --uid 6100 --gid 6100 \
-       --home /home/invoicesvc --create-home \
-       --shell /usr/sbin/nologin --password '*' \
-       --system invoicesvc
+    --home /home/invoicesvc --create-home \
+    --shell /usr/sbin/nologin --password '*' \
+    --system invoicesvc
 
 COPY --from=builder /opt/invoicesvc/site-packages /usr/local/lib/python3.12/site-packages
 
@@ -43,7 +43,6 @@ RUN mkdir -p /opt/airflow/data/invoices \
 
 COPY dags /opt/airflow/dags
 COPY airflow.cfg /opt/airflow/config/airflow.cfg
-COPY otel-collector-config.yaml /opt/airflow/config/otel-collector-config.yaml
 COPY data/orders.json /opt/airflow/data/orders.json
 
 ENV AIRFLOW_HOME=/opt/airflow \
