@@ -174,14 +174,3 @@ Setting orderid into Baggage
 	bags, _ = bags.SetMember(orderIDMember)
 	ctx = baggage.ContextWithBaggage(ctx, bags)
 ```
-
-## Demo Story code
-
-In order to produce an effective demo story, this service includes additional functionality.
-This service will grow an internal cache with each request.
-Eventually, the cache size will grow large enough to cause an out of memory (OOM) error and crash the service.
-The cache size is exposed via an internal call, so the frontend can properly assign a problematic userid when a cache size threshold is reached.
-When an order is placed, an additional delay through `getDiscounts` may be introduced.
-In this function, if a random chance exists to call the `loadDiscountFromDatabase` function, which will introduce a synthetic delay based on cache size.
-The synthetic delay is manifested as a series of spans making mock database calls.
-User "20109", whom should only show up when cache size is high, will have a higher likelihood to exhibit the delay.
