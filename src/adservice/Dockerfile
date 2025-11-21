@@ -1,4 +1,4 @@
-FROM amazoncorretto:11 as builder
+FROM amazoncorretto:23 as builder
 
 WORKDIR /app
 
@@ -11,10 +11,11 @@ COPY . .
 RUN chmod +x gradlew
 RUN ./gradlew installDist
 
-FROM amazoncorretto:11
+FROM amazoncorretto:23
 
 RUN yum install -y \
     wget \
+    findutils \
     && yum clean all \
     && rm -rf /var/cache/yum
 
