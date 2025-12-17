@@ -1,4 +1,4 @@
-FROM openjdk:11-slim as builder
+FROM amazoncorretto:23 as builder
 
 WORKDIR /app
 
@@ -11,11 +11,13 @@ COPY . .
 RUN chmod +x gradlew
 RUN ./gradlew installDist
 
-FROM openjdk:11-slim
+FROM amazoncorretto:23
 
-RUN apt-get -y update && apt-get install -qqy \
+RUN yum install -y \
     wget \
-    && rm -rf /var/lib/apt/lists/*
+    findutils \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
 RUN mkdir -p /opt/otel && \
     wget -q -O /opt/otel/javaagent.jar https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
