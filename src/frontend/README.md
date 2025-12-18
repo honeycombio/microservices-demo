@@ -120,10 +120,3 @@ In order to build browser javascript for otel web sdk, run the following command
 npm run build
 ```
 This will rebuild the `instrumentation-load.js` at ./dist directory, which will then be picked up by the HTML pages.
-
-## Demo Story code
-
-In order to produce an effective demo story, this service includes additional functionality.
-The `ensureSessionID` function in `middleware.go` assigns user ids in a random fashion, which may be affected under other random condition, when the cache size from the checkout service exceeds a threshold.
-The application will enter a degraded state of performance when cache size climbs.
-The checkout service has code to continuously grow a cache, until memory is exhausted and the service crashes with an out of memory (OOM) error.
