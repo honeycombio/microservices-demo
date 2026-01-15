@@ -1,0 +1,25 @@
+---
+alwaysApply: true
+---
+SKILL name: Observability Skills
+Description: This skill should be utilized when observing the deployed application via Honeycomb MCP
+
+- **Time accuracy**: Always verify time ranges (start/end) before queries. Honeycomb retains data for 60 days - ensure correct year, month, date, hours, minutes, seconds.
+
+- **Metrics** (`meta.signal_type: metric`): Lightweight signals showing trends over time. Detect spikes, data loss, or anomalies. Can appear in events as values (CPU, memory, disk).
+
+- **Logs** (`meta.signal_type: log`): Have severity and body (structured/unstructured). Parse structured logs (JSON, log formats) for patterns.
+
+- **Traces** (`meta.signal_type: trace`): Consist of spans with `trace.trace_id` and `trace.span_id`. Spans can be root (no parent) or child (`trace.parent_id`). Include `name`, `service.name`, attributes, and span_events (often logs).
+
+- **understand signals**: Try best to check if `meta.signal_type` exists and understand the signal type of the event.
+
+- **Data correlation**: Combine metrics, traces, and logs from the same time period for deeper insights.
+
+- **Aggregation**: Use sum, max, p95, etc. over time ranges (1h, 6h, 1d, 7d) to track trends.
+
+- **Bubble Up**: Use Honeycomb's Bubble Up to quickly identify significant variants in selections, then narrow down with group by and filters.
+
+- **Trace priority**: Traces provide the most context - relationships, interactions, flow, and precise bottleneck/error locations.
+
+- **Advanced aggregations**: `CONCURRENCY` tracks active spans (detects congestion/bottlenecks). `COUNT_DISTINCT(trace.trace_id)` or `COUNT_DISTINCT(trace.span_id)` shows unique trace/span creation trends.
