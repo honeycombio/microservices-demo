@@ -4,20 +4,22 @@ alwaysApply: true
 SKILL name: Observability Skills
 Description: This skill should be utilized when observing the deployed application via Honeycomb MCP
 
-- In the world of observability, time is critical. Utilize accurate date and time when performing observations. Since Honeycomb's data retention is 60 days, you should not make mistake when querying for the right year, month, date, hours, minutes, and seconds. Before running the query or retrieving traces, make sure that your time range (start, end) is accurately set. Checking them frequently is a good skill to have.
+- **Time accuracy**: Always verify time ranges (start/end) before queries. Honeycomb retains data for 60 days - ensure correct year, month, date, hours, minutes, seconds.
 
-- Metrics are signals that gives you the smoke to detect fire. They are lightweight, and shows you the trend of quantifiable measurement that would change over a period of time. Detect trend to identify sudden spikes, or sudden loss of data, sudden appearing of the data using Metrics. Metric's meta.signal_type is metric. However, they can also appear inside any events (logs, traces) and pose values (like memory utilization, cpu utilization, disk quota, etc.).
+- **Metrics** (`meta.signal_type: metric`): Lightweight signals showing trends over time. Detect spikes, data loss, or anomalies. Can appear in events as values (CPU, memory, disk).
 
-- Logs can either be structured or unstructured, and have two distinct attributes: severity (text, code) and body. Its meta.signal_type is log. Body can be structured (e.g. log format, JSON) or unstructured (free text). If the log body is structured, try determining their pattern and parse for the information accordingly.
+- **Logs** (`meta.signal_type: log`): Have severity and body (structured/unstructured). Parse structured logs (JSON, log formats) for patterns.
 
-- Traces are consisted of spans, and spans can either be root span (no parent) or child span (having trace.parent_id) Spans have trace. Its meta.sigal_type is trace. trace_id and trace.span_id that uniquely identifies itself. Multiple spans can belong to a single trace having same trace id. spans have name, and service.name. They can also have resource attributes and span attributes. Spans can also have span_events which is attached to a span. Logs are common type of span events that provides additional description of events happening in spans.
+- **Traces** (`meta.signal_type: trace`): Consist of spans with `trace.trace_id` and `trace.span_id`. Spans can be root (no parent) or child (`trace.parent_id`). Include `name`, `service.name`, attributes, and span_events (often logs).
 
-- Data is a fragment. More insightful information can be derived if you can combine relevant data, and this is an important skill in Observability. Correlate the data in various types (metrics, traces, logs) that happens within the same time to derive meaningful information and insights.
+- **understand signals**: Try best to check if `meta.signal_type` exists and understand the signal type of the event.
 
-- Another area is to have a good aggregation (sum, max, p95, etc) of data to track the 'trend' of something over a period of time (1 hour, 6 hours, 1 day, 7 days). Now this is a wider range analysis that aggregation is important.
+- **Data correlation**: Combine metrics, traces, and logs from the same time period for deeper insights.
 
-- Utilizing Honeycomb's Bubble Up strategy saves time as it quickly derives the most significant variants in the selection or selected area. Utilize bubble up to uncover unknown of unknowns, and perform additional group by and filter to narrow down the incidents to a group of trace.
+- **Aggregation**: Use sum, max, p95, etc. over time ranges (1h, 6h, 1d, 7d) to track trends.
 
-- If the trace data is available, it is the most critical telemetry data over logs and metrics. Trace holds the context. Trace holds the relationships and interactions, flow of activities. Trace also holds locations of where the bottleneck happened and errors occurred more precisely than metrics and logs.
+- **Bubble Up**: Use Honeycomb's Bubble Up to quickly identify significant variants in selections, then narrow down with group by and filters.
 
-- COUNT_DISTINCT(key) and CONCURRENCY can add additional insights than COUNT. COUNT visualizes number of events. CONCURRENCY tracks the number of 'active' spans at a given period of time, very useful for detecting congestion, contention, and bottleneck. COUNT_DISCTINCT(trace.trace_id) or COUNT_DISTINCT(trace.span_id) can also tell you how much of the spans or traces are being uniquely created in a given period of time, to identify the trend of large/small trace.
+- **Trace priority**: Traces provide the most context - relationships, interactions, flow, and precise bottleneck/error locations.
+
+- **Advanced aggregations**: `CONCURRENCY` tracks active spans (detects congestion/bottlenecks). `COUNT_DISTINCT(trace.trace_id)` or `COUNT_DISTINCT(trace.span_id)` shows unique trace/span creation trends.
