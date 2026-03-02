@@ -68,8 +68,9 @@ groups:
         type: double
         stability: development
         brief: >
-          The grand total charged to the user for the order, in USD. Set on
-          the `placeOrderHandler` span in the frontend after the checkout gRPC
+          The grand total charged to the user for the order, in the user's
+          selected currency as returned by checkout. Set on the
+          `placeOrderHandler` span in the frontend after the checkout gRPC
           call completes.
         examples: [42.99, 125.50, 0.99]
         requirement_level: recommended
