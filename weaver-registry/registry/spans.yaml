@@ -87,10 +87,10 @@ groups:
       email confirmation. Emits four lifecycle events: `prepared`, `charged`,
       `shipped`, and `discounted`.
     events:
-      - event.checkout.prepared
-      - event.checkout.charged
-      - event.checkout.shipped
-      - event.checkout.discounted
+      - prepared
+      - charged
+      - shipped
+      - discounted
     attributes:
       - ref: rpc.system
         requirement_level: required
