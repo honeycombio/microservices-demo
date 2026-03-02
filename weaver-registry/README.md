@@ -76,7 +76,7 @@ See the [Weaver template guide](https://github.com/open-telemetry/weaver/blob/ma
 
 ## Adding or modifying attributes
 
-1. **New application attribute** — add it to the appropriate group in `registry/app.yaml`. Use an `id` without the namespace prefix (e.g. `user_id`, not `app.user_id`), and include `type`, `stability`, `brief`, `examples`, and `requirement_level`.
+1. **New application attribute** — add it to the appropriate group in `registry/app.yaml`. Use a short leaf `id` without the namespace prefix (e.g. `user_id`, not `app.user_id`). Each group has a `prefix: app` field; Weaver concatenates the prefix and the leaf id to produce the fully-qualified attribute name (`app.user_id`). Include `type`, `stability`, `brief`, `examples`, and `requirement_level`.
 
 2. **New span** — add a group with `type: span` to `registry/spans.yaml`. Reference OTel standard attributes with `ref:` and inline any custom attributes with their full dotted name as `id`.
 

@@ -9,6 +9,7 @@ groups:
   # ---------------------------------------------------------------------------
   - id: registry.app.request
     type: attribute_group
+    prefix: app
     brief: "Request-scoped identifiers propagated via OpenTelemetry Baggage."
     stability: development
     attributes:
@@ -48,6 +49,7 @@ groups:
 
   - id: registry.app.order
     type: attribute_group
+    prefix: app
     brief: "Attributes that describe a placed order in the checkout flow."
     stability: development
     attributes:
@@ -74,6 +76,7 @@ groups:
 
   - id: registry.app.catalog
     type: attribute_group
+    prefix: app
     brief: "Attributes that describe product catalog interactions."
     stability: development
     attributes:
@@ -89,6 +92,7 @@ groups:
 
   - id: registry.app.runtime
     type: attribute_group
+    prefix: app
     brief: "Runtime and infrastructure diagnostic attributes."
     stability: development
     attributes:
@@ -128,6 +132,7 @@ groups:
 
   - id: registry.app.ads
     type: attribute_group
+    prefix: app
     brief: "Attributes describing ad-request context in adservice."
     stability: development
     attributes:

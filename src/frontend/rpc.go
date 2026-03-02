@@ -86,7 +86,7 @@ func (fe *frontendServer) getRecommendations(ctx context.Context, userID string,
 		&pb.ListRecommendationsRequest{UserId: userID, ProductIds: productIDs})
 	span := apiTrace.SpanFromContext(ctx)
 	lenProducts := len(resp.GetProductIds())
-	span.SetAttributes(attribute.Int("num_products", lenProducts))
+	span.SetAttributes(attribute.Int("recommendations.num_products", lenProducts))
 	if err != nil {
 		return nil, err
 	}
