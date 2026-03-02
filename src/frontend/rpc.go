@@ -85,11 +85,11 @@ func (fe *frontendServer) getRecommendations(ctx context.Context, userID string,
 	resp, err := fe.recommendationSvcClient.ListRecommendations(ctx,
 		&pb.ListRecommendationsRequest{UserId: userID, ProductIds: productIDs})
 	span := apiTrace.SpanFromContext(ctx)
-	lenProducts := len(resp.GetProductIds())
-	span.SetAttributes(attribute.Int("recommendations.num_products", lenProducts))
 	if err != nil {
 		return nil, err
 	}
+	lenProducts := len(resp.GetProductIds())
+	span.SetAttributes(attribute.Int("recommendations.num_products", lenProducts))
 	out := make([]*pb.Product, lenProducts)
 	for i, v := range resp.GetProductIds() {
 		p, err := fe.getProduct(ctx, v)

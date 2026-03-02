@@ -143,15 +143,7 @@ groups:
         brief: >
           A comma-separated string of context keys extracted from the incoming
           `AdRequest`. Used by adservice to select contextually relevant ads.
-          Set on the `getAds` span.
+          Set on both the `getAds` span and the `Constructing Ads using context`
+          span event.
         examples: ["clothing,accessories", "electronics", "cookware"]
-        requirement_level: recommended
-
-      - id: context_keys_length
-        type: int
-        stability: development
-        brief: >
-          The number of context keys present in the incoming `AdRequest`.
-          Set as a span event attribute on the `getAds` span in adservice.
-        examples: [0, 1, 3]
         requirement_level: recommended

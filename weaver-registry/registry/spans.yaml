@@ -143,26 +143,31 @@ groups:
     stability: development
     brief: >
       A synthetic database span present in all services that simulates latency
-      for observability demonstration purposes. Uses deprecated `db.*` attribute
-      names (db.statement, db.name) that map to `db.query.text` and
-      `db.namespace` in current OTel semconv.
+      for observability demonstration purposes. Sets the legacy `db.statement`
+      and `db.name` attribute keys; does not set `db.system.name`.
     note: |
       This span is intentional technical debt used for demo storytelling.
       In a production service, prefer `db.query.text` and `db.namespace`
       (OTel semconv >= 1.26.0) over the deprecated `db.statement` / `db.name`.
     attributes:
-      - ref: db.system.name
+      - id: db.statement
+        type: string
+        stability: development
+        brief: >
+          The SQL statement passed to `mockDatabaseCall`. Uses the legacy
+          `db.statement` key; the modern equivalent is `db.query.text`.
+        examples:
+          - "SELECT * FROM products"
+          - "SELECT * FROM discounts WHERE user = ?"
         requirement_level: required
-      - ref: db.query.text
-        requirement_level: recommended
-        note: >
-          In the codebase this is recorded as the legacy key `db.statement`.
-          The registry normalizes it to `db.query.text`.
-      - ref: db.namespace
-        requirement_level: recommended
-        note: >
-          In the codebase this is recorded as the legacy key `db.name`.
-          The registry normalizes it to `db.namespace`.
+      - id: db.name
+        type: string
+        stability: development
+        brief: >
+          The logical database name passed to `mockDatabaseCall`. Uses the
+          legacy `db.name` key; the modern equivalent is `db.namespace`.
+        examples: ["checkout", "ads", "productcatalog", "shipping"]
+        requirement_level: required
 
   # -- Product Catalog Service -------------------------------------------------
 
@@ -195,6 +200,8 @@ groups:
     brief: >
       Emitted by the `getAds` method in adservice (Java). Selects ads
       based on context keys from the incoming `AdRequest`.
+    events:
+      - event.adservice.constructing_ads
     attributes:
       - ref: rpc.system
         requirement_level: required
@@ -207,12 +214,6 @@ groups:
         stability: development
         brief: "See registry.app.ads."
         examples: ["clothing,accessories", "electronics", "cookware"]
-        requirement_level: recommended
-      - id: app.context_keys_length
-        type: int
-        stability: development
-        brief: "See registry.app.ads."
-        examples: [0, 1, 3]
         requirement_level: recommended
 
   # -- Recommendation Service -------------------------------------------------
