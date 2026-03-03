@@ -1,0 +1,11 @@
+name: online-boutique
+description: >
+  Custom semantic conventions for the Online Boutique microservices demo
+  application maintained by Honeycomb. Extends the OpenTelemetry semantic
+  convention registry with application-specific attributes, span definitions,
+  and span events used across Go, Python, Java, and Node.js services.
+semconv_version: 0.1.0
+schema_base_url: https://honeycombio.github.io/microservices-demo/schemas/
+dependencies:
+  - name: otel
+    registry_path: https://github.com/open-telemetry/semantic-conventions@v1.34.0[model]

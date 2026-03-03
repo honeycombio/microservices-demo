@@ -1,0 +1,247 @@
+groups:
+  # ---------------------------------------------------------------------------
+  # Span definitions
+  #
+  # These groups capture the primary instrumented spans for each service and
+  # list the custom attributes and OTel semconv refs they carry. Standard OTel
+  # attributes (e.g. rpc.*, http.*, db.*) are referenced via `ref` from the
+  # `otel` dependency declared in registry_manifest.yaml.
+  # ---------------------------------------------------------------------------
+
+  # -- Frontend ----------------------------------------------------------------
+
+  - id: span.frontend.http_handler
+    type: span
+    span_kind: server
+    stability: development
+    brief: >
+      Wraps every frontend HTTP handler via the `instrumentHandler` middleware.
+      Sets request-scoped identity attributes and propagates them as Baggage.
+    attributes:
+      - ref: http.request.method
+        requirement_level: required
+      - ref: url.path
+        requirement_level: required
+      - ref: http.response.status_code
+        requirement_level: required
+      - id: app.user_id
+        type: string
+        stability: development
+        brief: "See registry.app.request."
+        examples: ["user-12345", "20109", "guest-abc123"]
+        requirement_level: recommended
+      - id: app.request_id
+        type: string
+        stability: development
+        brief: "See registry.app.request."
+        examples:
+          - "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          - "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        requirement_level: recommended
+      - id: app.build_id
+        type: string
+        stability: development
+        brief: "See registry.app.request."
+        examples: ["v1.2.3", "abcdef1", "main-20240101"]
+        requirement_level: opt_in
+
+  - id: span.frontend.place_order
+    type: span
+    span_kind: client
+    stability: development
+    brief: >
+      Emitted by the frontend's `placeOrderHandler` for the full checkout
+      round-trip (gRPC call to checkoutservice + response handling).
+    attributes:
+      - id: app.cart_total
+        type: double
+        stability: development
+        brief: "See registry.app.order."
+        examples: [42.99, 125.50, 0.99]
+        requirement_level: recommended
+
+  - id: span.frontend.get_recommendations
+    type: span
+    span_kind: client
+    stability: development
+    brief: >
+      Emitted by the frontend's `getRecommendations` helper when calling
+      recommendationservice via gRPC.
+    attributes:
+      - id: recommendations.num_products
+        type: int
+        stability: development
+        brief: "See registry.recommendation.response."
+        examples: [0, 4, 10]
+        requirement_level: recommended
+
+  # -- Checkout Service --------------------------------------------------------
+
+  - id: span.checkoutservice.place_order
+    type: span
+    span_kind: server
+    stability: development
+    brief: >
+      The primary span for the `PlaceOrder` gRPC handler in checkoutservice.
+      Orchestrates cart fetch, currency conversion, payment, shipping, and
+      email confirmation. Emits four lifecycle events: `prepared`, `charged`,
+      `shipped`, and `discounted`.
+    events:
+      - prepared
+      - charged
+      - shipped
+      - discounted
+    attributes:
+      - ref: rpc.system
+        requirement_level: required
+      - ref: rpc.service
+        requirement_level: required
+      - ref: rpc.method
+        requirement_level: required
+      - id: app.order_id
+        type: string
+        stability: development
+        brief: "See registry.app.order."
+        examples: ["8c7f3b2a-1e4d-4c9a-b0f8-3a5e7d2c1f6b"]
+        requirement_level: required
+      - id: app.user_id
+        type: string
+        stability: development
+        brief: "Propagated from Baggage. See registry.app.request."
+        examples: ["user-12345", "20109", "guest-abc123"]
+        requirement_level: recommended
+      - id: app.request_id
+        type: string
+        stability: development
+        brief: "Propagated from Baggage. See registry.app.request."
+        examples:
+          - "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          - "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+        requirement_level: recommended
+      - id: app.build_id
+        type: string
+        stability: development
+        brief: "Propagated from Baggage. See registry.app.request."
+        examples: ["v1.2.3", "abcdef1", "main-20240101"]
+        requirement_level: opt_in
+      - id: app.cache_size
+        type: int
+        stability: development
+        brief: "See registry.app.runtime."
+        examples: [0, 128, 1000, 5000]
+        requirement_level: recommended
+
+  # -- Mock Database Call (all services) --------------------------------------
+  #
+  # Every service contains a `mockDatabaseCall` function that creates a child
+  # span simulating a SQL query. The intentional latency injected here scales
+  # with `app.cache_size` in checkoutservice.
+
+  - id: span.demo.mock_database_call
+    type: span
+    span_kind: client
+    stability: development
+    brief: >
+      A synthetic database span present in all services that simulates latency
+      for observability demonstration purposes. Sets the legacy `db.statement`
+      and `db.name` attribute keys; does not set `db.system.name`.
+    note: |
+      This span is intentional technical debt used for demo storytelling.
+      In a production service, prefer `db.query.text` and `db.namespace`
+      (OTel semconv >= 1.26.0) over the deprecated `db.statement` / `db.name`.
+    attributes:
+      - id: db.statement
+        type: string
+        stability: development
+        brief: >
+          The SQL statement passed to `mockDatabaseCall`. Uses the legacy
+          `db.statement` key; the modern equivalent is `db.query.text`.
+        examples:
+          - "SELECT * FROM products"
+          - "SELECT * FROM discounts WHERE user = ?"
+        requirement_level: required
+      - id: db.name
+        type: string
+        stability: development
+        brief: >
+          The logical database name passed to `mockDatabaseCall`. Uses the
+          legacy `db.name` key; the modern equivalent is `db.namespace`.
+        examples: ["checkout", "ads", "productcatalog", "shipping"]
+        requirement_level: required
+
+  # -- Product Catalog Service -------------------------------------------------
+
+  - id: span.productcatalogservice.get_product
+    type: span
+    span_kind: server
+    stability: development
+    brief: >
+      Emitted by the `GetProduct` gRPC handler in productcatalogservice.
+    attributes:
+      - ref: rpc.system
+        requirement_level: required
+      - ref: rpc.service
+        requirement_level: required
+      - ref: rpc.method
+        requirement_level: required
+      - id: app.product_id
+        type: string
+        stability: development
+        brief: "See registry.app.catalog."
+        examples: ["OLJCESPC7Z", "66VCHSJNUP", "1YMWWN1N4O"]
+        requirement_level: required
+
+  # -- Ad Service -------------------------------------------------------------
+
+  - id: span.adservice.get_ads
+    type: span
+    span_kind: server
+    stability: development
+    brief: >
+      Emitted by the `getAds` method in adservice (Java). Selects ads
+      based on context keys from the incoming `AdRequest`.
+    events:
+      - event.adservice.constructing_ads
+    attributes:
+      - ref: rpc.system
+        requirement_level: required
+      - ref: rpc.service
+        requirement_level: required
+      - ref: rpc.method
+        requirement_level: required
+      - id: app.context_keys
+        type: string
+        stability: development
+        brief: "See registry.app.ads."
+        examples: ["clothing,accessories", "electronics", "cookware"]
+        requirement_level: recommended
+
+  # -- Recommendation Service -------------------------------------------------
+
+  - id: span.recommendationservice.list_recommendations
+    type: span
+    span_kind: server
+    stability: development
+    brief: >
+      Emitted by the `ListRecommendations` gRPC handler in recommendationservice
+      (Python). Executes in a `ThreadPoolExecutor`; thread saturation metrics
+      are captured for performance analysis.
+    attributes:
+      - ref: rpc.system
+        requirement_level: required
+      - ref: rpc.service
+        requirement_level: required
+      - ref: rpc.method
+        requirement_level: required
+      - id: app.python.active_threads
+        type: int
+        stability: development
+        brief: "See registry.app.runtime."
+        examples: [0, 2, 8, 16]
+        requirement_level: recommended
+      - id: app.python.pending_pool
+        type: int
+        stability: development
+        brief: "See registry.app.runtime."
+        examples: [0, 1, 10]
+        requirement_level: recommended

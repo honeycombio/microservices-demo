@@ -1,0 +1,148 @@
+groups:
+  # ---------------------------------------------------------------------------
+  # Checkout span event attribute groups
+  #
+  # The checkoutservice.PlaceOrder span emits four named events during the
+  # order lifecycle. Each event carries its own attributes defined here.
+  # In code these are added via span.AddEvent("<name>", trace.WithAttributes(...))
+  # ---------------------------------------------------------------------------
+
+  - id: registry.checkout.event.prepared
+    type: attribute_group
+    brief: "Attributes on the 'prepared' span event emitted by checkoutservice."
+    stability: development
+    attributes:
+      - ref: app.order_id
+        requirement_level: required
+      - ref: app.user_id
+        requirement_level: required
+      - id: currency
+        type: string
+        stability: development
+        brief: >
+          The ISO 4217 currency code selected by the user for the order.
+          Emitted on the `prepared` span event after the cart has been fetched
+          and currency conversion has been requested.
+        examples: ["USD", "EUR", "JPY", "GBP", "CAD"]
+        requirement_level: required
+
+  - id: registry.checkout.event.charged
+    type: attribute_group
+    brief: "Attributes on the 'charged' span event emitted by checkoutservice."
+    stability: development
+    attributes:
+      - ref: app.order_id
+        requirement_level: required
+      - ref: app.user_id
+        requirement_level: required
+      - id: currency
+        type: string
+        stability: development
+        brief: >
+          The ISO 4217 currency code for the charge amount.
+          Emitted on the `charged` span event.
+        examples: ["USD", "EUR", "JPY", "GBP", "CAD"]
+        requirement_level: required
+      - id: chargeTotal
+        type: double
+        stability: development
+        brief: >
+          The total monetary amount (in the user's selected currency) charged
+          to the payment instrument. Emitted on the `charged` span event after
+          `paymentservice.Charge` returns successfully.
+        examples: [42.99, 0.99, 1250.00]
+        requirement_level: required
+
+  - id: registry.checkout.event.shipped
+    type: attribute_group
+    brief: "Attributes on the 'shipped' span event emitted by checkoutservice."
+    stability: development
+    attributes:
+      - ref: app.order_id
+        requirement_level: required
+      - ref: app.user_id
+        requirement_level: required
+      - id: itemCount
+        type: int
+        stability: development
+        brief: >
+          The total number of distinct line items included in the shipment.
+          Emitted on the `shipped` span event after `shippingservice.ShipOrder`
+          returns a tracking ID.
+        examples: [1, 3, 10]
+        requirement_level: required
+      - id: orderItems
+        type: string
+        stability: development
+        brief: >
+          A string-serialized representation of the order's line items,
+          including product IDs and quantities. Emitted on the `shipped` span
+          event. The format matches Go's default struct formatter.
+        examples:
+          - "[{OLJCESPC7Z 2} {66VCHSJNUP 1}]"
+          - "[{1YMWWN1N4O 1}]"
+        requirement_level: recommended
+
+  - id: registry.checkout.event.discounted
+    type: attribute_group
+    brief: "Attributes on the 'discounted' span event emitted by checkoutservice."
+    stability: development
+    attributes:
+      - ref: app.user_id
+        requirement_level: required
+      - id: currency
+        type: string
+        stability: development
+        brief: >
+          The ISO 4217 currency code in effect at discount time.
+          Emitted on the `discounted` span event.
+        examples: ["USD", "EUR", "JPY", "GBP", "CAD"]
+        requirement_level: required
+      - id: discount
+        type: string
+        stability: development
+        brief: >
+          The discount value returned by the mock `getDiscounts` SQL call in
+          checkoutservice. The value is a synthetic string used for
+          demonstration purposes; its artificial latency grows as `app.cache_size`
+          increases, simulating slow discount lookups tied to the memory leak.
+        examples: ["10", "5", "19"]
+        requirement_level: recommended
+
+  # ---------------------------------------------------------------------------
+  # Ad service span event attribute groups
+  # ---------------------------------------------------------------------------
+  - id: registry.adservice.event.constructing_ads
+    type: attribute_group
+    brief: "Attributes on the 'Constructing Ads using context' span event emitted by adservice."
+    stability: development
+    attributes:
+      - ref: app.context_keys
+        requirement_level: recommended
+      - id: app.context_keys_length
+        type: int
+        stability: development
+        brief: >
+          The number of context keys present in the incoming `AdRequest`.
+          Emitted on the `Constructing Ads using context` span event; not set
+          as an attribute on the parent `getAds` span.
+        examples: [0, 1, 3]
+        requirement_level: required
+
+  # ---------------------------------------------------------------------------
+  # Recommendation service attribute group
+  # ---------------------------------------------------------------------------
+  - id: registry.recommendation.response
+    type: attribute_group
+    brief: "Attributes describing the response from recommendationservice."
+    stability: development
+    attributes:
+      - id: recommendations.num_products
+        type: int
+        stability: development
+        brief: >
+          The number of product IDs returned by the `ListRecommendations` RPC.
+          Set on the span in the frontend's `getRecommendations` function after
+          the gRPC call completes.
+        examples: [0, 4, 10]
+        requirement_level: recommended
